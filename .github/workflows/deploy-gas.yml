@@ -8,6 +8,8 @@ on:
       - 'gas/**'
       - '.github/workflows/deploy-gas.yml'
       - '.clasp.json'
+  workflow_dispatch:
+
 
 jobs:
   deploy:
