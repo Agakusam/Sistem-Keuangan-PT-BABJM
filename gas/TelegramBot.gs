@@ -112,13 +112,16 @@ function handleCallbackQuery(query) {
       break;
 
     case 'kas_skip_id':
-      // Skip NO. ID, langsung ke nominal
+      // Skip NO. ID, langsung ke lampiran
       var s = getState(chatId);
       if (s) {
-        s.step = 'nominal';
+        s.step = 'lampiran';
         s.no_id = '';
         setState(chatId, s);
-        editTelegramMessage(chatId, messageId, _buildKasProgress(s) + '\n\n💰 Ketik <b>nominal</b>:', null);
+        editTelegramMessage(chatId, messageId,
+          _buildKasProgress(s) + '\n\n📎 Ketik <b>Lampiran URL/Link</b> (opsional):',
+          { inline_keyboard: [[{ text: '⏭ Skip', callback_data: 'kas_skip_lampiran' }]] }
+        );
       }
       break;
 
