@@ -73,6 +73,19 @@ function doPost(e) {
 
   // Telegram webhook
   if (body.update_id !== undefined) {
+    var updateId = String(body.update_id);
+    var cacheKey = 'tg_up_' + updateId;
+    var cache = CacheService.getScriptCache();
+    var cached = cache.get(cacheKey);
+    
+    if (cached !== null) {
+      Logger.log('Ignored duplicate Telegram update_id: ' + updateId);
+      return ContentService.createTextOutput("ok");
+    }
+    
+    // Save update_id to cache for 5 minutes (300 seconds) to prevent duplicate processing
+    cache.put(cacheKey, 'processing', 300);
+    
     try {
       if (body.callback_query) {
         handleCallbackQuery(body.callback_query);
@@ -82,7 +95,7 @@ function doPost(e) {
     } catch (err) {
       Logger.log('Telegram error: ' + err.message + '\n' + err.stack);
     }
-    return HtmlService.createHtmlOutput("ok");
+    return ContentService.createTextOutput("ok");
   }
 
   // API calls
