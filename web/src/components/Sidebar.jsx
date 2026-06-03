@@ -10,14 +10,39 @@ import {
   Settings 
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { fetchFromGas } from '@/lib/api';
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [saldo, setSaldo] = useState('Rp 0');
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    async function loadSaldo() {
+      if (!process.env.NEXT_PUBLIC_GAS_URL) {
+        setSaldo('Rp 2.744.606');
+        return;
+      }
+      try {
+        const res = await fetchFromGas('getSaldo');
+        if (res.success) {
+          setSaldo(res.data.saldo_formatted);
+        }
+      } catch (err) {
+        console.error('Failed to load sidebar saldo:', err);
+      }
+    }
+    if (mounted) {
+      loadSaldo();
+      // Poll every 30 seconds to keep it fresh
+      const interval = setInterval(loadSaldo, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [mounted]);
 
   const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -78,7 +103,7 @@ export default function Sidebar() {
       <div style={{ position: 'absolute', bottom: '2rem', left: '1.5rem', right: '1.5rem' }}>
         <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Saldo Kas Saat Ini</p>
-          <h3 style={{ color: 'var(--primary)', marginTop: '0.25rem' }}>Loading...</h3>
+          <h3 style={{ color: 'var(--primary)', marginTop: '0.25rem' }}>{saldo}</h3>
         </div>
       </div>
     </aside>
