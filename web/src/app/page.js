@@ -171,14 +171,15 @@ export default function Dashboard() {
 
         {/* Card Bon Pending */}
         <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Bon Belum Lunas</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Bon Belum Pertanggungan</span>
             <div style={{ background: 'var(--warning-bg)', color: 'var(--warning)', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
               <Clock size={20} />
             </div>
           </div>
+          <h2 style={{ fontSize: '1.75rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>{data.bon?.total_nominal_formatted || 'Rp 0'}</h2>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem' }}>
-            <h2 style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{data.bon?.pending || 0} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>bon</span></h2>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{data.bon?.pending || 0} bon outstanding</span>
           </div>
           
           {(data.bon?.warning > 0 || data.bon?.overdue > 0) && (

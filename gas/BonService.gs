@@ -33,16 +33,6 @@ function addBon(params) {
 
   appendBonRow(rowData);
 
-  // Juga catat sebagai transaksi kas keluar (Kredit)
-  addCashTransaction({
-    keterangan: 'BRT - Bon ' + rowData.pic + ' ' + rowData.keterangan,
-    jumlah: amount,
-    jenis: 'KREDIT',
-    pic: rowData.pic,
-    tanggal: tanggal,
-    sumber: params.sumber || 'SYSTEM'
-  });
-
   return successResponse({
     id_bon: bonId,
     pic: rowData.pic,
@@ -54,7 +44,7 @@ function addBon(params) {
 }
 
 /**
- * Pertanggungan bon (ubah status ke LUNAS)
+ * Pertanggungan bon (ubah status ke SUDAH)
  * @param {Object} params {id_bon}
  */
 function settleBon(params) {
@@ -63,18 +53,18 @@ function settleBon(params) {
   var bon = findBonById(params.id_bon);
   if (!bon) return errorResponse('Bon tidak ditemukan: ' + params.id_bon, 404);
 
-  if (String(bon.status).toUpperCase() === 'LUNAS') {
-    return errorResponse('Bon sudah berstatus LUNAS');
+  if (String(bon.status).toUpperCase() === 'SUDAH') {
+    return errorResponse('Bon sudah berstatus SUDAH');
   }
 
-  updateBonStatus(bon._row, 'LUNAS');
+  updateBonStatus(bon._row, 'SUDAH');
 
-  // Catat pengembalian sebagai transaksi kas masuk (Debit)
+  // Catat pengeluaran sebagai transaksi kas keluar (Kredit) saat pertanggungan
   var nominal = parseRupiah(bon.nominal);
   addCashTransaction({
-    keterangan: 'Pengembalian BRT - Bon ' + bon.pic + ' ' + bon.keterangan,
+    keterangan: 'Pertanggungan Bon - ' + bon.pic + ' ' + bon.keterangan,
     jumlah: nominal,
-    jenis: 'DEBIT',
+    jenis: 'KREDIT',
     pic: bon.pic,
     sumber: params.sumber || 'SYSTEM'
   });
@@ -84,7 +74,7 @@ function settleBon(params) {
     pic: bon.pic,
     keterangan: bon.keterangan,
     nominal_formatted: formatRupiahSpaced(nominal),
-    status: 'LUNAS',
+    status: 'SUDAH',
     days_taken: bon.days_ago
   }, 'Bon berhasil dipertanggungjawabkan');
 }
@@ -178,7 +168,7 @@ function monitorBons() {
 function rekapBons() {
   var all = readBonRows();
   var belum = all.filter(function (b) { return String(b.status).toUpperCase() === 'BELUM'; });
-  var lunas = all.filter(function (b) { return String(b.status).toUpperCase() === 'LUNAS'; });
+  var lunas = all.filter(function (b) { return String(b.status).toUpperCase() === 'SUDAH'; });
 
   var totalBelum = 0, totalLunas = 0;
   belum.forEach(function (b) { totalBelum += parseRupiah(b.nominal); });

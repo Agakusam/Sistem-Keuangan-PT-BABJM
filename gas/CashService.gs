@@ -256,6 +256,12 @@ function getDashboardData() {
     };
   });
 
+  // Hitung total nominal bon yang belum pertanggungan
+  var totalOutstanding = 0;
+  for (var j = 0; j < pendingBons.length; j++) {
+    totalOutstanding += parseRupiah(pendingBons[j].nominal);
+  }
+
   return successResponse({
     saldo: saldo,
     saldo_formatted: formatRupiahSpaced(saldo),
@@ -271,6 +277,8 @@ function getDashboardData() {
       pending: pendingBons.length,
       warning: warningBons.length,
       overdue: overdueBons.length,
+      total_nominal: totalOutstanding,
+      total_nominal_formatted: formatRupiahSpaced(totalOutstanding),
       list: pendingListCleaned
     },
     recent_transactions: recentCleaned

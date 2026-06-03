@@ -41,12 +41,12 @@ export default function BonPage() {
   }, []);
 
   const handleSettle = async (id_bon) => {
-    if (!confirm(`Selesaikan bon ${id_bon} (LUNAS)?`)) return;
+    if (!confirm(`Selesaikan pertanggungan bon ${id_bon}?`)) return;
     
     try {
       const res = await postToGas('settleBon', { id_bon, sumber: 'WEB' });
       if (res.success) {
-        alert(`Bon ${id_bon} berhasil dilunaskan!`);
+        alert(`Bon ${id_bon} berhasil dipertanggungjawabkan!`);
         loadData();
       } else {
         alert(`Gagal: ${res.error}`);
@@ -119,8 +119,8 @@ export default function BonPage() {
                     <td>{b.keterangan}</td>
                     <td style={{ color: 'var(--primary)', fontWeight: 500 }}>{b.nominal}</td>
                     <td>
-                      {b.status === 'LUNAS' ? (
-                        <span className="badge badge-success">LUNAS</span>
+                      {b.status === 'SUDAH' ? (
+                        <span className="badge badge-success">SUDAH</span>
                       ) : (
                         b.alert_level === 'OVERDUE' ? (
                           <span className="badge badge-danger" title={`${b.days_ago} hari`}>OVERDUE ({b.days_ago}h)</span>
