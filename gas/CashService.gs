@@ -242,6 +242,19 @@ function getDashboardData() {
   var pendingBons = getPendingBons();
   var warningBons = getWarningBons();
   var overdueBons = getOverdueBons();
+  var pendingListCleaned = pendingBons.map(function (b) {
+    return {
+      id_bon: b.id_bon,
+      tanggal: b.tanggal,
+      pic: b.pic,
+      keterangan: b.keterangan,
+      nominal: b.nominal,
+      nominal_value: parseRupiah(b.nominal),
+      status: b.status,
+      days_ago: b.days_ago,
+      alert_level: b.alert_level
+    };
+  });
 
   return successResponse({
     saldo: saldo,
@@ -257,7 +270,8 @@ function getDashboardData() {
     bon: {
       pending: pendingBons.length,
       warning: warningBons.length,
-      overdue: overdueBons.length
+      overdue: overdueBons.length,
+      list: pendingListCleaned
     },
     recent_transactions: recentCleaned
   });

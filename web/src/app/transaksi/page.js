@@ -26,7 +26,7 @@ export default function TransaksiPage() {
       
       const res = await fetchFromGas('listCash', { limit: 100 });
       if (res.success) {
-        setTransactions(res.data.reverse()); // Show newest first
+        setTransactions(res.data.data.reverse()); // Show newest first
       }
     } catch (err) {
       console.error(err);

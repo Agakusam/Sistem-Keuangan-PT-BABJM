@@ -73,6 +73,7 @@ function initConfig() {
     'WEB_PIN': '',
     'SIGN_DIBUAT': '',
     'SIGN_DISETUJUI': '',
+    'WEB_APP_URL': '',
     'APP_VERSION': '1.0.0'
   };
 

@@ -145,12 +145,21 @@ function setupTelegramWebhook() {
   var token = getTelegramBotToken();
   var webAppUrl = ScriptApp.getService().getUrl();
 
+  if (webAppUrl.indexOf('/dev') !== -1) {
+    var storedUrl = getConfig('WEB_APP_URL', '');
+    if (storedUrl) {
+      webAppUrl = storedUrl;
+    } else {
+      Logger.log('⚠️ Warning: Running setup inside GAS Editor returns a /dev URL which Telegram cannot access. Storing Web App URL in Config first is recommended.');
+    }
+  }
+
   var response = UrlFetchApp.fetch(
     'https://api.telegram.org/bot' + token + '/setWebhook?url=' + encodeURIComponent(webAppUrl),
     { muteHttpExceptions: true }
   );
 
-  Logger.log('Webhook setup: ' + response.getContentText());
+  Logger.log('Webhook setup (URL: ' + webAppUrl + '): ' + response.getContentText());
   return response.getContentText();
 }
 

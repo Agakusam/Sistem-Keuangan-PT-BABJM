@@ -27,7 +27,7 @@ export default function BonPage() {
       
       const res = await fetchFromGas('listBon');
       if (res.success) {
-        setBons(res.data.reverse()); // Show newest first
+        setBons(res.data.data.reverse()); // Show newest first
       }
     } catch (err) {
       console.error(err);

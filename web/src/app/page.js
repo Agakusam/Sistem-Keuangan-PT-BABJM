@@ -198,6 +198,93 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* 2-Column Section: Transaksi Terakhir & Bon Belum Lunas */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
+        {/* Column 1: Transaksi Terakhir */}
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Transaksi Terakhir</h3>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Keterangan</th>
+                  <th style={{ textAlign: 'right' }}>Jumlah</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recent_transactions && data.recent_transactions.length > 0 ? (
+                  data.recent_transactions.slice(0, 5).map((t, idx) => {
+                    const isDebit = t.debit && t.debit !== 'Rp -';
+                    const amountText = isDebit ? t.debit : t.kredit;
+                    const amountColor = isDebit ? 'var(--success)' : 'var(--danger)';
+                    return (
+                      <tr key={idx}>
+                        <td>{t.tanggal}</td>
+                        <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{t.keterangan}</td>
+                        <td style={{ textAlign: 'right', color: amountColor, fontWeight: 600 }}>{amountText}</td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: 'center', padding: '1.5rem' }}>Tidak ada transaksi terbaru</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Column 2: Bon Belum Lunas */}
+        <div className="glass-card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>Bon Belum Lunas</h3>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID Bon</th>
+                  <th>PIC</th>
+                  <th>Keterangan</th>
+                  <th style={{ textAlign: 'right' }}>Nominal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.bon?.list && data.bon.list.length > 0 ? (
+                  data.bon.list.slice(0, 5).map((b, idx) => (
+                    <tr key={idx}>
+                      <td style={{ fontWeight: 600 }}>{b.id_bon}</td>
+                      <td>{b.pic}</td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{b.keterangan}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            {b.alert_level === 'OVERDUE' ? (
+                              <span style={{ color: 'var(--danger)', fontWeight: 600 }}>⚠️ OVERDUE ({b.days_ago}h)</span>
+                            ) : b.alert_level === 'WARNING' ? (
+                              <span style={{ color: 'var(--warning)', fontWeight: 600 }}>⚠️ WARNING ({b.days_ago}h)</span>
+                            ) : (
+                              <span>⏳ {b.days_ago} hari</span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'right', color: 'var(--primary)', fontWeight: 600 }}>
+                        {b.nominal}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: '1.5rem' }}>Semua bon sudah lunas! 🎉</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
