@@ -166,6 +166,20 @@ function handleCallbackQuery(query) {
       clearState(chatId);
       editTelegramMessage(chatId, messageId, '❌ Transaksi dibatalkan.');
       break;
+
+    case 'bon_confirm':
+      var confirmStateBon = getState(chatId);
+      if (confirmStateBon) {
+        _executeBonTransaction(chatId, confirmStateBon, username);
+        clearState(chatId);
+        editTelegramMessage(chatId, messageId, '⏳ Menyimpan...');
+      }
+      break;
+
+    case 'bon_cancel':
+      clearState(chatId);
+      editTelegramMessage(chatId, messageId, '❌ Pencatatan bon dibatalkan.');
+      break;
   }
 }
 
@@ -254,7 +268,7 @@ function handleKas(chatId, text, username) {
 function handleBon(chatId, text, username) {
   var parts = text.trim().split(/\s+/);
 
-  // /bon <PIC> <nominal> <keterangan>
+  // Quick input: /bon <PIC> <nominal> <keterangan>
   if (parts.length >= 4) {
     var parsed = parseBonQuick(text);
     if (parsed) {
@@ -282,12 +296,9 @@ function handleBon(chatId, text, username) {
     }
   }
 
-  sendTelegramMessage(chatId,
-    '📋 <b>Catat Bon Baru</b>\n\n'
-    + 'Format:\n<code>/bon [PIC] [nominal] [keterangan]</code>\n\n'
-    + 'Contoh:\n<code>/bon Fita 500000 Belanja kebersihan</code>\n'
-    + '<code>/bon Rio 1.5jt Servis mobil</code>'
-  );
+  // Guided flow
+  setState(chatId, { flow: 'bon', step: 'deskripsi' });
+  sendTelegramMessage(chatId, '📋 <b>Pencatatan Bon Baru</b>\n\n📝 Ketik <b>deskripsi/keterangan</b> bon:');
 }
 
 function handleSaldo(chatId) {
@@ -446,6 +457,34 @@ function handleStateInput(chatId, text, state, username) {
         _showKasConfirmation(chatId, state);
         break;
     }
+  } else if (state.flow === 'bon') {
+    switch (state.step) {
+      case 'deskripsi':
+        state.deskripsi = text;
+        state.step = 'nominal';
+        setState(chatId, state);
+        sendTelegramMessage(chatId, _buildBonProgress(state) + '\n\n💰 Ketik <b>nominal</b>:');
+        break;
+
+      case 'nominal':
+        var amount = parseAmount(text);
+        if (amount <= 0) {
+          sendTelegramMessage(chatId, '❌ Nominal tidak valid. Coba lagi:\n\nContoh: 50000, 50rb, 1.5jt');
+          return;
+        }
+        state.jumlah = amount;
+        state.step = 'pic';
+        setState(chatId, state);
+        sendTelegramMessage(chatId, _buildBonProgress(state) + '\n\n👤 Ketik <b>PIC</b> (nama penanggung jawab):');
+        break;
+
+      case 'pic':
+        state.pic = text;
+        state.step = 'confirm';
+        setState(chatId, state);
+        _showBonConfirmation(chatId, state);
+        break;
+    }
   }
 }
 
@@ -498,3 +537,49 @@ function _executeKasTransaction(chatId, state, username) {
     sendTelegramMessage(chatId, '❌ Gagal: ' + result.error);
   }
 }
+
+function _buildBonProgress(state) {
+  var lines = ['📋 <b>BON KAS BARU</b>'];
+  if (state.deskripsi) lines.push('📝 ' + state.deskripsi);
+  if (state.jumlah) lines.push('💰 ' + formatRupiahSpaced(state.jumlah));
+  if (state.pic) lines.push('👤 ' + state.pic);
+  return lines.join('\n');
+}
+
+function _showBonConfirmation(chatId, state) {
+  sendTelegramMessage(chatId,
+    '📋 <b>Konfirmasi Bon</b>\n\n' + _buildBonProgress(state) + '\n\nSimpan?',
+    {
+      inline_keyboard: [
+        [
+          { text: '✅ Simpan', callback_data: 'bon_confirm' },
+          { text: '❌ Batal', callback_data: 'bon_cancel' }
+        ]
+      ]
+    }
+  );
+}
+
+function _executeBonTransaction(chatId, state, username) {
+  var result = addBon({
+    pic: state.pic,
+    jumlah: state.jumlah,
+    keterangan: state.deskripsi,
+    sumber: 'TELEGRAM'
+  });
+
+  if (result.success) {
+    notifyNewBon(result.data);
+    sendTelegramMessage(chatId,
+      '📋 <b>Bon Berhasil Dicatat!</b>\n\n'
+      + '🆔 ' + result.data.id_bon + '\n'
+      + '👤 ' + result.data.pic + '\n'
+      + '💰 ' + result.data.nominal_formatted + '\n'
+      + '📝 ' + result.data.keterangan + '\n'
+      + '⏳ Status: BELUM'
+    );
+  } else {
+    sendTelegramMessage(chatId, '❌ Gagal: ' + result.error);
+  }
+}
+
