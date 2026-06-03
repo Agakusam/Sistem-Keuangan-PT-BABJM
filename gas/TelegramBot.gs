@@ -43,6 +43,13 @@ function handleTelegramMessage(message) {
   // Command routing
   var cmd = text.split(/\s+/)[0].toLowerCase().split('@')[0]; // Handle /cmd@botname
 
+  // Route /lunas_BON_XXXX_XXX clicks
+  if (cmd.indexOf('/lunas_') === 0) {
+    var rawId = cmd.substring(7);
+    var bonId = rawId.replace(/_/g, '-').toUpperCase();
+    return handleLunas(chatId, '/lunas ' + bonId);
+  }
+
   switch (cmd) {
     case '/start':
       return handleStart(chatId, username);
@@ -327,23 +334,27 @@ function handleRekap(chatId, text) {
 }
 
 function handleMonitor(chatId) {
-  var text = formatBonMonitorMessage();
-  var pending = getPendingBons();
+  try {
+    var text = formatBonMonitorMessage();
+    var pending = getPendingBons();
 
-  // Tambahkan inline keyboard untuk selesaikan bon
-  var keyboard = null;
-  if (pending.length > 0) {
-    var buttons = [];
-    for (var i = 0; i < Math.min(pending.length, 8); i++) {
-      buttons.push([{
-        text: '✅ Lunaskan ' + pending[i].id_bon + ' (' + pending[i].pic + ')',
-        callback_data: 'bon_lunas:' + pending[i].id_bon
-      }]);
+    // Tambahkan inline keyboard untuk selesaikan bon
+    var keyboard = null;
+    if (pending.length > 0) {
+      var buttons = [];
+      for (var i = 0; i < Math.min(pending.length, 8); i++) {
+        buttons.push([{
+          text: '✅ Lunaskan ' + pending[i].id_bon + ' (' + pending[i].pic + ')',
+          callback_data: 'bon_lunas:' + pending[i].id_bon
+        }]);
+      }
+      keyboard = { inline_keyboard: buttons };
     }
-    keyboard = { inline_keyboard: buttons };
-  }
 
-  sendTelegramMessage(chatId, text, keyboard);
+    sendTelegramMessage(chatId, text, keyboard);
+  } catch (err) {
+    sendTelegramMessage(chatId, '❌ Error di /monitor: ' + err.message + '\n' + err.stack);
+  }
 }
 
 function handleLunas(chatId, text) {

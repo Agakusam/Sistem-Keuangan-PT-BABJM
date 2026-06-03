@@ -152,8 +152,9 @@ function formatBonMonitorMessage() {
   if (d.overdue.length > 0) {
     text += '\n🔴 <b>OVERDUE (' + BON_MAX_DAYS + '+ hari)</b>\n';
     d.overdue.forEach(function (b) {
-      text += '  • ' + b.id_bon + ' | ' + b.pic + '\n'
-        + '    ' + b.keterangan + '\n'
+      var cmdLink = '/lunas_' + b.id_bon.replace(/-/g, '_');
+      text += '  • ' + cmdLink + ' | 👤 <b>' + b.pic + '</b>\n'
+        + '    📝 ' + b.keterangan + '\n'
         + '    💰 ' + formatRupiahSpaced(b.nominal_value) + ' | 📅 ' + b.days_ago + ' hari\n';
     });
   }
@@ -162,8 +163,9 @@ function formatBonMonitorMessage() {
   if (d.warning.length > 0) {
     text += '\n⚠️ <b>WARNING (' + BON_WARNING_DAYS + '-' + (BON_MAX_DAYS - 1) + ' hari)</b>\n';
     d.warning.forEach(function (b) {
-      text += '  • ' + b.id_bon + ' | ' + b.pic + '\n'
-        + '    ' + b.keterangan + '\n'
+      var cmdLink = '/lunas_' + b.id_bon.replace(/-/g, '_');
+      text += '  • ' + cmdLink + ' | 👤 <b>' + b.pic + '</b>\n'
+        + '    📝 ' + b.keterangan + '\n'
         + '    💰 ' + formatRupiahSpaced(b.nominal_value) + ' | 📅 ' + b.days_ago + ' hari\n';
     });
   }
@@ -172,12 +174,13 @@ function formatBonMonitorMessage() {
   if (d.normal.length > 0) {
     text += '\n🟡 <b>NORMAL</b>\n';
     d.normal.forEach(function (b) {
-      text += '  • ' + b.id_bon + ' | ' + b.pic + '\n'
-        + '    ' + b.keterangan + '\n'
+      var cmdLink = '/lunas_' + b.id_bon.replace(/-/g, '_');
+      text += '  • ' + cmdLink + ' | 👤 <b>' + b.pic + '</b>\n'
+        + '    📝 ' + b.keterangan + '\n'
         + '    💰 ' + formatRupiahSpaced(b.nominal_value) + ' | 📅 ' + b.days_ago + ' hari\n';
     });
   }
 
-  text += '\nKetik /lunas <ID_BON> untuk menyelesaikan';
+  text += '\n💡 <i>Klik salah satu kode <b>/lunas_...</b> di atas untuk melunaskan secara instan!</i>';
   return text;
 }
