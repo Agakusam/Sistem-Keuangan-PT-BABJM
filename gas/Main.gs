@@ -82,7 +82,7 @@ function doPost(e) {
     } catch (err) {
       Logger.log('Telegram error: ' + err.message + '\n' + err.stack);
     }
-    return jsonOutput(successResponse(null, 'OK'));
+    return HtmlService.createHtmlOutput("ok");
   }
 
   // API calls
