@@ -80,7 +80,7 @@ function doPost(e) {
     
     if (cached !== null) {
       Logger.log('Ignored duplicate Telegram update_id: ' + updateId);
-      return ContentService.createTextOutput("ok");
+      return HtmlService.createHtmlOutput("ok");
     }
     
     // Save update_id to cache for 5 minutes (300 seconds) to prevent duplicate processing
@@ -95,7 +95,7 @@ function doPost(e) {
     } catch (err) {
       Logger.log('Telegram error: ' + err.message + '\n' + err.stack);
     }
-    return ContentService.createTextOutput("ok");
+    return HtmlService.createHtmlOutput("ok");
   }
 
   // API calls
