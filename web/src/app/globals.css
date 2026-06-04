@@ -480,6 +480,11 @@ tr:last-child td {
   outline: none;
 }
 
+.excel-input::placeholder {
+  color: var(--text-tertiary) !important;
+  opacity: 0.35 !important;
+}
+
 .excel-input:focus {
   background-color: #fef08a; /* Soft Excel Yellow */
   color: #0f172a;

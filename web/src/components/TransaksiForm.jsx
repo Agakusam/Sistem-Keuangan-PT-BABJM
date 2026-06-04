@@ -105,6 +105,13 @@ export default function TransaksiForm({ onSuccess }) {
         </button>
       </div>
 
+      {/* Summary Totals for Bulk Entry */}
+      <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', background: 'rgba(16, 124, 65, 0.05)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 124, 65, 0.2)', fontSize: '0.85rem', fontWeight: 600 }}>
+        <div>Total Debit (Masuk): <span style={{ color: 'var(--success)' }}>{formatRp(rows.filter(r => r.jenis === 'DEBIT').reduce((sum, r) => sum + (parseFloat(r.jumlah) || 0), 0))}</span></div>
+        <div style={{ borderLeft: '1px solid var(--border)' }}></div>
+        <div>Total Kredit (Keluar): <span style={{ color: 'var(--danger)' }}>{formatRp(rows.filter(r => r.jenis === 'KREDIT').reduce((sum, r) => sum + (parseFloat(r.jumlah) || 0), 0))}</span></div>
+      </div>
+
       <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '1rem' }}>
         * Ketik langsung pada sel tabel untuk mengedit data seperti di Excel. Baris kosong tidak akan disimpan.
       </p>
@@ -124,8 +131,6 @@ export default function TransaksiForm({ onSuccess }) {
               <th style={{ width: '110px' }}>PIC</th>
               <th style={{ width: '110px' }}>No. ID</th>
               <th style={{ width: '130px' }}>Tgl. Nota</th>
-              <th style={{ width: '130px' }}>Tgl. Tagih</th>
-              <th style={{ minWidth: '150px' }}>Link Lampiran</th>
               <th style={{ width: '45px' }}></th>
             </tr>
           </thead>
@@ -196,23 +201,6 @@ export default function TransaksiForm({ onSuccess }) {
                     onChange={e => handleCellChange(idx, 'tgl_nota', e.target.value)}
                   />
                 </td>
-                <td>
-                  <input 
-                    type="date" 
-                    className="excel-input" 
-                    value={row.tgl_penagihan} 
-                    onChange={e => handleCellChange(idx, 'tgl_penagihan', e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input 
-                    type="text" 
-                    className="excel-input" 
-                    placeholder="Link Drive/Dokumen" 
-                    value={row.lampiran} 
-                    onChange={e => handleCellChange(idx, 'lampiran', e.target.value)}
-                  />
-                </td>
                 <td style={{ textAlign: 'center', padding: 0 }}>
                   <button 
                     type="button" 
@@ -226,16 +214,7 @@ export default function TransaksiForm({ onSuccess }) {
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr style={{ fontWeight: 'bold', backgroundColor: 'rgba(99, 102, 241, 0.05)' }}>
-              <td className="excel-row-num">Σ</td>
-              <td colSpan="3" style={{ textAlign: 'right', paddingRight: '1rem', borderRight: 'none' }}>Total Nominal:</td>
-              <td style={{ textAlign: 'right', color: 'var(--primary)', borderLeft: 'none' }}>
-                {formatRp(rows.reduce((sum, r) => sum + (parseFloat(r.jumlah) || 0), 0))}
-              </td>
-              <td colSpan="6"></td>
-            </tr>
-          </tfoot>
+          {/* Footer removed, totals displayed at the top */}
         </table>
       </div>
 
