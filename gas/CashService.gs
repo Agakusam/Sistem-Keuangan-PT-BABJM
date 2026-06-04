@@ -51,7 +51,8 @@ function addCashTransaction(params) {
     tanggal: tanggal,
     tgl_nota: params.tgl_nota || '',
     akun: params.akun || '',
-    keterangan: String(params.keterangan).trim(),
+    keterangan_debit: jenis === 'DEBIT' ? String(params.keterangan).trim() : '',
+    keterangan_kredit: jenis === 'KREDIT' ? String(params.keterangan).trim() : '',
     pic: params.pic || '',
     no_id: params.no_id || '',
     debit: jenis === 'DEBIT' ? formatRupiah(amount) : 'Rp -',
@@ -65,7 +66,9 @@ function addCashTransaction(params) {
 
   return successResponse({
     row: newRow,
-    keterangan: rowData.keterangan,
+    keterangan: jenis === 'DEBIT' ? rowData.keterangan_debit : rowData.keterangan_kredit,
+    keterangan_debit: rowData.keterangan_debit,
+    keterangan_kredit: rowData.keterangan_kredit,
     jenis: jenis,
     jumlah: amount,
     jumlah_formatted: formatRupiahSpaced(amount),
@@ -110,6 +113,8 @@ function listCashTransactions(params) {
     copy.debit_value = parseRupiah(r.debit);
     copy.kredit_value = parseRupiah(r.kredit);
     copy.saldo_value = parseRupiah(r.saldo_akhir);
+    // Virtual description field for compatibility
+    copy.keterangan = copy.debit_value > 0 ? (r.keterangan_debit || '') : (r.keterangan_kredit || '');
     return copy;
   });
 
@@ -189,6 +194,8 @@ function exportCashData(params) {
     copy.debit_value = parseRupiah(r.debit);
     copy.kredit_value = parseRupiah(r.kredit);
     copy.saldo_value = parseRupiah(r.saldo_akhir);
+    // Virtual description field for compatibility
+    copy.keterangan = copy.debit_value > 0 ? (r.keterangan_debit || '') : (r.keterangan_kredit || '');
     return copy;
   });
 
@@ -228,9 +235,12 @@ function getDashboardData() {
   // Ambil 10 transaksi terakhir
   var recent = readCashRows({ limit: 10 });
   var recentCleaned = recent.map(function (r) {
+    var isDebit = parseRupiah(r.debit) > 0;
     return {
       tanggal: r.tanggal,
-      keterangan: r.keterangan,
+      keterangan_debit: r.keterangan_debit || '',
+      keterangan_kredit: r.keterangan_kredit || '',
+      keterangan: isDebit ? (r.keterangan_debit || '') : (r.keterangan_kredit || ''),
       pic: r.pic,
       debit: r.debit,
       kredit: r.kredit,

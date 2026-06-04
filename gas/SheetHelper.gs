@@ -16,17 +16,18 @@ var SHEETS = {
 
 // Kolom Cash_log: A-J (index 1-10)
 var CASH_COLS = {
-  TANGGAL: 1,       // A: PT BABJM LAPORAN PETTY CASH Tanggal
-  TGL_NOTA: 2,      // B: Tgl. Nota
-  AKUN: 3,          // C: Akun
-  KETERANGAN: 4,    // D: Keterangan
-  PIC: 5,           // E: PIC
-  NO_ID: 6,         // F: NO. ID
-  DEBIT: 7,         // G: Debit
-  KREDIT: 8,        // H: Kredit
-  SALDO_AKHIR: 9,   // I: Saldo Akhir
-  TGL_PENAGIHAN: 10,// J: Tgl. Penagihan
-  LAMPIRAN: 11      // K: Lampiran
+  TANGGAL: 1,           // A: PT BABJM LAPORAN PETTY CASH Tanggal
+  TGL_NOTA: 2,          // B: Tgl. Nota
+  AKUN: 3,              // C: Akun
+  KETERANGAN_DEBIT: 4,  // D: Keterangan Debit
+  KETERANGAN_KREDIT: 5, // E: Keterangan Kredit (labeled "Keterangan")
+  PIC: 6,               // F: PIC
+  NO_ID: 7,             // G: NO. ID
+  DEBIT: 8,             // H: Debit (nominal)
+  KREDIT: 9,            // I: Kredit (nominal)
+  SALDO_AKHIR: 10,      // J: Saldo Akhir
+  TGL_PENAGIHAN: 11,    // K: Tgl. Penagihan
+  LAMPIRAN: 12          // L: Lampiran
 };
 
 // Kolom Bon_log: A-F (index 1-6)
@@ -70,7 +71,8 @@ function appendCashRow(data) {
     data.tanggal || '',
     data.tgl_nota || '',
     data.akun || '',
-    data.keterangan || '',
+    data.keterangan_debit || '',
+    data.keterangan_kredit || '',
     data.pic || '',
     data.no_id || '',
     data.debit || '',
@@ -97,7 +99,7 @@ function readCashRows(opts) {
   if (lastRow < startRow) return [];
 
   var numRows = lastRow - startRow + 1;
-  var data = sheet.getRange(startRow, 1, numRows, 11).getValues();
+  var data = sheet.getRange(startRow, 1, numRows, 12).getValues();
   var results = [];
 
   for (var i = 0; i < data.length; i++) {
@@ -107,14 +109,15 @@ function readCashRows(opts) {
       tanggal: r[0],
       tgl_nota: r[1],
       akun: r[2],
-      keterangan: r[3],
-      pic: r[4],
-      no_id: r[5],
-      debit: r[6],
-      kredit: r[7],
-      saldo_akhir: r[8],
-      tgl_penagihan: r[9],
-      lampiran: r[10]
+      keterangan_debit: r[3],
+      keterangan_kredit: r[4],
+      pic: r[5],
+      no_id: r[6],
+      debit: r[7],
+      kredit: r[8],
+      saldo_akhir: r[9],
+      tgl_penagihan: r[10],
+      lampiran: r[11]
     });
   }
 
@@ -271,4 +274,40 @@ function getOverdueBons() {
   return getPendingBons().filter(function (b) {
     return b.alert_level === 'OVERDUE';
   });
+}
+
+/**
+ * Migrasi kolom Cash_log: Pindahkan deskripsi Debit dari Column E (Keterangan Kredit) ke Column D (Keterangan Debit)
+ */
+function migrateCashLogDescriptions() {
+  var sheet = getCashSheet();
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 6) return 'Tidak ada data untuk dimigrasi';
+  
+  // Ambil data mulai dari baris 6 (data pertama setelah header) sampai baris terakhir, 12 kolom
+  var range = sheet.getRange(6, 1, lastRow - 5, 12);
+  var values = range.getValues();
+  var count = 0;
+  
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+    var debitVal = parseRupiah(row[7]); // Index 7 is Column H (Debit)
+    
+    // Jika transaksi Debit (nominal debit > 0)
+    if (debitVal > 0) {
+      var ketDebit = row[3]; // Column D (Keterangan Debit)
+      var ketKredit = row[4]; // Column E (Keterangan Kredit / Keterangan)
+      
+      // Jika Keterangan Debit kosong tetapi Keterangan Kredit terisi, pindahkan
+      if (!ketDebit && ketKredit) {
+        row[3] = ketKredit;
+        row[4] = '';
+        count++;
+      }
+    }
+  }
+  
+  // Tulis kembali data yang sudah diupdate
+  range.setValues(values);
+  return 'Migrasi selesai. Berhasil memindahkan ' + count + ' deskripsi transaksi Debit.';
 }
