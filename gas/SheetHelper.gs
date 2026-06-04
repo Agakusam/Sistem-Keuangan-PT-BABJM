@@ -45,7 +45,16 @@ var BON_COLS = {
 var _ssCache = null;
 
 function getSpreadsheet() {
-  if (!_ssCache) _ssCache = SpreadsheetApp.openById(SPREADSHEET_ID);
+  if (!_ssCache) {
+    try {
+      _ssCache = SpreadsheetApp.getActiveSpreadsheet();
+    } catch (e) {
+      // ignore
+    }
+    if (!_ssCache) {
+      _ssCache = SpreadsheetApp.openById(SPREADSHEET_ID);
+    }
+  }
   return _ssCache;
 }
 
