@@ -231,19 +231,20 @@ function handleKas(chatId, text, username) {
   if (parts.length >= 3) {
     var quick = parseKasQuick(text);
     if (quick) {
-      // Quick input selalu Kredit (pengeluaran) — karena lebih sering
       var result = addCashTransaction({
         keterangan: quick.deskripsi,
         jumlah: quick.jumlah,
-        jenis: 'KREDIT',
+        jenis: quick.jenis,
         sumber: 'TELEGRAM'
       });
 
       if (result.success) {
         notifyNewTransaction(result.data);
+        var emoji = quick.jenis === 'DEBIT' ? '🟢' : '🔴';
+        var label = quick.jenis === 'DEBIT' ? 'Kas Masuk' : 'Kas Keluar';
         sendTelegramMessage(chatId,
           '✅ <b>Tercatat!</b>\n\n'
-          + '🔴 Kas Keluar: ' + result.data.jumlah_formatted + '\n'
+          + emoji + ' ' + label + ': ' + result.data.jumlah_formatted + '\n'
           + '📝 ' + result.data.keterangan + '\n'
           + '💳 Saldo: ' + result.data.saldo_formatted
         );

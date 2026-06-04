@@ -205,24 +205,50 @@ function _pad(n, len) {
 /**
  * Parse quick kas command: /kas <deskripsi> <nominal>
  * Juga bisa: /kas <nominal> <deskripsi>
+ * Menolak nominal negatif, namun mendeteksi tanda + (Debit) atau - (Kredit).
  */
 function parseKasQuick(text) {
   if (!text) return null;
   var parts = text.trim().split(/\s+/);
   if (parts.length < 3 || parts[0].toLowerCase() !== '/kas') return null;
 
-  // Cek apakah argumen ke-2 adalah angka (format: /kas 50000 deskripsi)
-  var firstArg = parts[1];
-  var amount = parseAmount(firstArg);
-  if (amount > 0) {
-    return { jumlah: amount, deskripsi: parts.slice(2).join(' ') };
+  function detectJenisAndAmount(token) {
+    var raw = String(token).trim();
+    var jenis = 'KREDIT'; // Default jika tanpa tanda
+    
+    if (raw.charAt(0) === '+') {
+      jenis = 'DEBIT';
+      raw = raw.substring(1);
+    } else if (raw.charAt(0) === '-') {
+      jenis = 'KREDIT';
+      raw = raw.substring(1);
+    }
+    
+    var amount = parseAmount(raw);
+    if (amount > 0) {
+      return { amount: amount, jenis: jenis };
+    }
+    return null;
   }
 
-  // Cek argumen terakhir (format: /kas deskripsi beli atk 50000)
-  var lastArg = parts[parts.length - 1];
-  amount = parseAmount(lastArg);
-  if (amount > 0) {
-    return { jumlah: amount, deskripsi: parts.slice(1, -1).join(' ') };
+  // Cek apakah argumen ke-2 adalah angka (format: /kas +50000 deskripsi)
+  var firstResult = detectJenisAndAmount(parts[1]);
+  if (firstResult) {
+    return { 
+      jumlah: firstResult.amount, 
+      jenis: firstResult.jenis, 
+      deskripsi: parts.slice(2).join(' ') 
+    };
+  }
+
+  // Cek argumen terakhir (format: /kas deskripsi beli atk +50000)
+  var lastResult = detectJenisAndAmount(parts[parts.length - 1]);
+  if (lastResult) {
+    return { 
+      jumlah: lastResult.amount, 
+      jenis: lastResult.jenis, 
+      deskripsi: parts.slice(1, -1).join(' ') 
+    };
   }
 
   return null;
