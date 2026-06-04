@@ -16,7 +16,7 @@ export default function TransaksiForm({ onSuccess }) {
   const [successMsg, setSuccessMsg] = useState('');
   
   const createEmptyRow = () => ({
-    jenis: 'KREDIT',
+    jenis: '',
     tanggal: new Date().toISOString().split('T')[0],
     keterangan: '',
     jumlah: '',
@@ -153,10 +153,14 @@ export default function TransaksiForm({ onSuccess }) {
 
     try {
       const res = await postToGas('addCashBulk', {
-        transactions: validRows.map(r => ({
-          ...r,
-          jumlah: parseFloat(r.jumlah)
-        }))
+        transactions: validRows.map(r => {
+          const cleanJenis = r.jenis.trim().toUpperCase();
+          return {
+            ...r,
+            jenis: cleanJenis.startsWith('D') || cleanJenis.includes('MASUK') || cleanJenis.includes('DEB') ? 'DEBIT' : 'KREDIT',
+            jumlah: parseFloat(r.jumlah)
+          };
+        })
       });
 
       if (res.success) {
@@ -242,7 +246,11 @@ export default function TransaksiForm({ onSuccess }) {
                       handleCellChange(idx, 'jenis', val);
                     }}
                     onBlur={e => {
-                      const val = e.target.value.toUpperCase();
+                      const val = e.target.value.trim().toUpperCase();
+                      if (!val) {
+                        handleCellChange(idx, 'jenis', '');
+                        return;
+                      }
                       if (val.startsWith('D') || val.includes('MASUK') || val.includes('DEB')) {
                         handleCellChange(idx, 'jenis', 'DEBIT');
                       } else {
