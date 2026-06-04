@@ -224,10 +224,10 @@ function fullSetup() {
 }
 
 /**
- * Simple Trigger onEdit Google Sheets
+ * Installed Trigger onEdit Google Sheets
  * Memantau perubahan di sheet Bon_log untuk menyinkronkan ke Cash_log
  */
-function onEdit(e) {
+function onSpreadsheetEdit(e) {
   if (!e) return;
   try {
     var range = e.range;
@@ -246,8 +246,32 @@ function onEdit(e) {
       _syncBonRowToCash(row);
     }
   } catch (err) {
-    Logger.log('onEdit error: ' + err.message);
+    Logger.log('onSpreadsheetEdit error: ' + err.message);
   }
+}
+
+/**
+ * Setup installed trigger untuk edit spreadsheet
+ * Jalankan ini sekali saja dari Editor Script (klik tombol Run pada fungsi ini)
+ */
+function setupEditTrigger() {
+  var ss = getSpreadsheet();
+  
+  // Hapus trigger lama jika ada untuk menghindari duplikasi
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'onSpreadsheetEdit') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  
+  // Buat trigger baru
+  ScriptApp.newTrigger('onSpreadsheetEdit')
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
+  
+  Logger.log('✅ Installed Edit Trigger berhasil didaftarkan untuk fungsi onSpreadsheetEdit');
 }
 
 /**
@@ -304,5 +328,14 @@ function _syncBonRowToCash(row) {
       no_id: idBon,
       sumber: 'GSHEET_ONEDIT'
     });
+  }
+}
+
+function testOnEdit() {
+  var sheet = getBonSheet();
+  var lastRow = sheet.getLastRow();
+  Logger.log('Last row of Bon_log: ' + lastRow);
+  if (lastRow >= 2) {
+    _syncBonRowToCash(lastRow);
   }
 }
