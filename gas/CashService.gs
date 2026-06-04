@@ -95,14 +95,6 @@ function listCashTransactions(params) {
     rows = readCashRows({ limit: parseInt(params.limit) || 50 });
   }
 
-  // Filter PIC
-  if (params.pic) {
-    var picFilter = String(params.pic).toLowerCase();
-    rows = rows.filter(function (r) {
-      return String(r.pic).toLowerCase().indexOf(picFilter) !== -1;
-    });
-  }
-
   // Clean up internal fields
   var cleaned = rows.map(function (r) {
     var copy = {};
@@ -118,8 +110,52 @@ function listCashTransactions(params) {
     return copy;
   });
 
+  // Calculate summary metrics on the date range (before PIC filter is applied)
+  var totalDebit = 0;
+  var totalKredit = 0;
+  for (var i = 0; i < cleaned.length; i++) {
+    totalDebit += cleaned[i].debit_value;
+    totalKredit += cleaned[i].kredit_value;
+  }
+  
+  var saldoAkhir = cleaned.length > 0 ? cleaned[cleaned.length - 1].saldo_value : 0;
+  var saldoAwal = cleaned.length > 0 ? (saldoAkhir - totalDebit + totalKredit) : 0;
+
+  if (cleaned.length === 0) {
+    if (params.dari) {
+      var dateDari = parseDate(params.dari);
+      var all = readCashRows();
+      var lastBefore = null;
+      for (var j = 0; j < all.length; j++) {
+        var d = parseDate(all[j].tanggal);
+        if (d && d < dateDari) {
+          lastBefore = all[j];
+        }
+      }
+      var lastSaldoVal = lastBefore ? parseRupiah(lastBefore.saldo_akhir) : getLastSaldo();
+      saldoAwal = lastSaldoVal;
+      saldoAkhir = lastSaldoVal;
+    } else {
+      var currentSaldo = getLastSaldo();
+      saldoAwal = currentSaldo;
+      saldoAkhir = currentSaldo;
+    }
+  }
+
+  // Filter PIC
+  if (params.pic) {
+    var picFilter = String(params.pic).toLowerCase();
+    cleaned = cleaned.filter(function (r) {
+      return String(r.pic).toLowerCase().indexOf(picFilter) !== -1;
+    });
+  }
+
   return successResponse({
     total: cleaned.length,
+    total_debit: totalDebit,
+    total_kredit: totalKredit,
+    saldo_awal: saldoAwal,
+    saldo_akhir: saldoAkhir,
     data: cleaned
   });
 }

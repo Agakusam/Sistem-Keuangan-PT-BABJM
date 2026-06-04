@@ -311,3 +311,95 @@ function migrateCashLogDescriptions() {
   range.setValues(values);
   return 'Migrasi selesai. Berhasil memindahkan ' + count + ' deskripsi transaksi Debit.';
 }
+
+function getDashboardSheet() { return getSheet(SHEETS.DASHBOARD); }
+
+/**
+ * Membangun visual dashboard dan filter tanggal dinamis pada Google Sheet tab Dashboard.
+ */
+function setupGSheetDashboard() {
+  var ss = getSpreadsheet();
+  var d = getDashboardSheet();
+  
+  // Hard Reset
+  d.clear();
+  d.clearFormats();
+  d.clearConditionalFormatRules();
+  
+  // Set Column Widths
+  d.setColumnWidth(1, 20); // Spacer column A
+  d.setColumnWidth(2, 110); // B: Tanggal
+  d.setColumnWidth(3, 110); // C: Tgl. Nota
+  d.setColumnWidth(4, 80);  // D: Akun
+  d.setColumnWidth(5, 220); // E: Keterangan Debit
+  d.setColumnWidth(6, 220); // F: Keterangan Kredit
+  d.setColumnWidth(7, 100); // G: PIC
+  d.setColumnWidth(8, 110); // H: NO. ID
+  d.setColumnWidth(9, 110); // I: Debit
+  d.setColumnWidth(10, 110); // J: Kredit
+  d.setColumnWidth(11, 130); // K: Saldo Akhir
+  d.setColumnWidth(12, 110); // L: Tgl. Penagihan
+  d.setColumnWidth(13, 100); // M: Lampiran
+
+  // Title Block
+  d.getRange('B2:M2').merge().setValue('🏦 PETTY CASH PT BABJM').setFontSize(16).setFontWeight('bold').setFontColor('#FFFFFF').setBackground('#1e3a8a').setHorizontalAlignment('center').setVerticalAlignment('middle');
+  d.getRange('B3:M3').merge().setValue('Dashboard Ringkasan Kas & Filter Tanggal').setFontSize(10).setFontStyle('italic').setFontColor('#e2e8f0').setBackground('#1e3a8a').setHorizontalAlignment('center').setVerticalAlignment('middle');
+  d.setRowHeight(2, 35);
+  d.setRowHeight(3, 20);
+
+  // Filters Block
+  d.getRange('B5').setValue('Tanggal Awal').setFontWeight('bold').setBackground('#f1f5f9').setHorizontalAlignment('center');
+  d.getRange('B6').setValue('Tanggal Akhir').setFontWeight('bold').setBackground('#f1f5f9').setHorizontalAlignment('center');
+  
+  // Default values: 1 week ago to today
+  d.getRange('C5').setFormula('=TODAY()-7').setNumberFormat('yyyy-mm-dd').setBackground('#fffbeb').setHorizontalAlignment('center');
+  d.getRange('C6').setFormula('=TODAY()').setNumberFormat('yyyy-mm-dd').setBackground('#fffbeb').setHorizontalAlignment('center');
+  
+  // Set Date Validation
+  var dateValidation = SpreadsheetApp.newDataValidation().requireDate().build();
+  d.getRange('C5:C6').setDataValidation(dateValidation);
+  
+  // Summary Metrics Headers
+  d.getRange('E5').setValue('TOTAL DEBIT').setBackground('#15803d').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
+  d.getRange('F5').setValue('TOTAL KREDIT').setBackground('#b91c1c').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
+  d.getRange('G5').setValue('BARIS DATA').setBackground('#475569').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
+  d.getRange('H5').setValue('SALDO AWAL').setBackground('#0369a1').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
+  d.getRange('I5').setValue('SALDO AKHIR').setBackground('#0f172a').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
+  
+  // Summary Metrics Values Formulations (using Indonesian local formula divider ;)
+  d.getRange('E6').setFormula('=SUMIFS(Cash_log!H7:H; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('F6').setFormula('=SUMIFS(Cash_log!I7:I; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('G6').setFormula('=COUNTIFS(Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('#,##0');
+  d.getRange('H6').setFormula('=IFERROR(LOOKUP(2; 1/((Cash_log!A$6:A<C5)*(Cash_log!A$6:A<>"")); Cash_log!J$6:J); Cash_log!J$6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('I6').setFormula('=H6+E6-F6').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+
+  // Borders for Summary Cards and Input
+  d.getRange('B5:C6').setBorder(true, true, true, true, true, true, '#cbd5e1', SpreadsheetApp.BorderStyle.SOLID);
+  d.getRange('E5:I6').setBorder(true, true, true, true, true, true, '#cbd5e1', SpreadsheetApp.BorderStyle.SOLID);
+
+  // Table Title Block
+  d.getRange('B8:M8').merge().setValue('📋 LOG TRANSAKSI FILTERED').setFontWeight('bold').setFontSize(11).setFontColor('#FFFFFF').setBackground('#334155').setHorizontalAlignment('center').setVerticalAlignment('middle');
+  d.setRowHeight(8, 25);
+
+  // Table Headers
+  var headers = [
+    ["Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan Kredit", "PIC", "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan", "Lampiran"]
+  ];
+  d.getRange('B9:M9').setValues(headers).setBackground('#475569').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center').setVerticalAlignment('middle');
+  d.setRowHeight(9, 25);
+
+  // Table Data Filter Formula
+  d.getRange('B10').setFormula('=IFERROR(FILTER(Cash_log!A7:L; Cash_log!A7:A>=C5; Cash_log!A7:A<=C6); "Tidak ada transaksi dalam rentang ini")');
+  
+  // Format table data columns
+  d.getRange('B10:B1000').setHorizontalAlignment('center');
+  d.getRange('C10:C1000').setHorizontalAlignment('center');
+  d.getRange('D10:D1000').setHorizontalAlignment('center');
+  d.getRange('G10:G1000').setHorizontalAlignment('center');
+  d.getRange('H10:H1000').setHorizontalAlignment('center');
+  d.getRange('I10:K1000').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('L10:L1000').setHorizontalAlignment('center');
+  d.getRange('M10:M1000').setHorizontalAlignment('center');
+  
+  return 'Dashboard Google Sheet berhasil dibangun!';
+}
