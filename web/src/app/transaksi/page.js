@@ -388,8 +388,8 @@ export default function TransaksiPage() {
     <div>
       {/* Professional Print Header */}
       <div className="print-header print-only">
-        <h1 className="print-title">PT BUMI ASSALAM BULIAN JAYA MANDIRI (PT BABJM)</h1>
-        <h2 className="print-subtitle">LAPORAN TRANSAKSI PETTY CASH (KAS KECIL)</h2>
+        <h1 className="print-title">PT Berkah Amanah Bersama Jaya Makmur</h1>
+        <h2 className="print-subtitle">LAPORAN TRANSAKSI KAS KECIL</h2>
         <p className="print-period">Periode: {formatDate(startDate)} s/d {formatDate(endDate)}</p>
         <div className="print-divider"></div>
       </div>

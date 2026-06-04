@@ -422,8 +422,8 @@ export default function BonPage() {
     <div>
       {/* Professional Print Header */}
       <div className="print-header print-only">
-        <h1 className="print-title">PT BUMI ASSALAM BULIAN JAYA MANDIRI (PT BABJM)</h1>
-        <h2 className="print-subtitle">LAPORAN MONITORING BON KAS</h2>
+        <h1 className="print-title">PT Berkah Amanah Bersama Jaya Makmur</h1>
+        <h2 className="print-subtitle">LAPORAN MONITORING BON KAS KECIL</h2>
         <p className="print-period">Tanggal Cetak: {formatDate(new Date().toISOString().split('T')[0])}</p>
         <div className="print-divider"></div>
       </div>
