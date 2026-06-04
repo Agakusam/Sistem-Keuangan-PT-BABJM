@@ -2,38 +2,78 @@
 
 import { useState } from 'react';
 import { postToGas } from '@/lib/api';
+import { Plus, Trash2 } from 'lucide-react';
 
 export default function BonForm({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   
-  const [formData, setFormData] = useState({
+  const createEmptyRow = () => ({
+    tanggal: new Date().toISOString().split('T')[0],
     pic: '',
     keterangan: '',
-    jumlah: '',
-    tanggal: new Date().toISOString().split('T')[0],
+    jumlah: ''
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const [rows, setRows] = useState([
+    createEmptyRow(),
+    createEmptyRow(),
+    createEmptyRow()
+  ]);
+
+  const handleCellChange = (index, field, value) => {
+    setRows(prev => prev.map((row, idx) => {
+      if (idx === index) {
+        return { ...row, [field]: value };
+      }
+      return row;
+    }));
+  };
+
+  const handleAddRow = () => {
+    setRows(prev => [...prev, createEmptyRow()]);
+  };
+
+  const handleDeleteRow = (index) => {
+    if (rows.length === 1) {
+      setRows([createEmptyRow()]);
+      return;
+    }
+    setRows(prev => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMsg('');
+
+    // Filter only rows that have PIC, Keterangan, and Nominal
+    const validRows = rows.filter(r => r.pic.trim() !== '' && r.keterangan.trim() !== '' && r.jumlah !== '');
+    if (validRows.length === 0) {
+      setError('Mohon isi minimal 1 baris bon (PIC, Keterangan, & Nominal wajib diisi).');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const res = await postToGas('addBon', {
-        ...formData,
-        sumber: 'WEB'
+      const res = await postToGas('addBonBulk', {
+        bons: validRows.map(r => ({
+          ...r,
+          jumlah: parseFloat(r.jumlah)
+        }))
       });
 
       if (res.success) {
-        if (onSuccess) onSuccess(res.data);
+        setSuccessMsg(res.message || 'Bon berhasil disimpan!');
+        if (onSuccess) {
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
+        }
       } else {
-        setError(res.error || 'Gagal menyimpan bon');
+        setError(res.error || 'Gagal menyimpan bon bulk');
       }
     } catch (err) {
       setError(err.message);
@@ -44,35 +84,96 @@ export default function BonForm({ onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3 style={{ marginBottom: '1.5rem' }}>Catat Bon Baru</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h3 style={{ margin: 0 }}>Input Massal Bon Baru (Excel Grid Mode)</h3>
+        <button 
+          type="button" 
+          className="btn btn-secondary" 
+          onClick={handleAddRow}
+          style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+        >
+          <Plus size={14} /> Tambah Baris
+        </button>
+      </div>
+
+      <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '1rem' }}>
+        * Ketik langsung pada sel tabel untuk mengedit data seperti di Excel. Baris kosong tidak akan disimpan.
+      </p>
       
-      {error && <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>{error}</div>}
+      {error && <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem' }}>{error}</div>}
+      {successMsg && <div style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem' }}>{successMsg}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-        <div className="input-group">
-          <label className="input-label" htmlFor="tanggal">Tanggal Bon *</label>
-          <input required type="date" id="tanggal" name="tanggal" className="input-field" value={formData.tanggal} onChange={handleChange} />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="pic">PIC (Penerima Bon) *</label>
-          <input required type="text" id="pic" name="pic" className="input-field" placeholder="Nama penerima bon" value={formData.pic} onChange={handleChange} />
-        </div>
+      <div className="excel-table-container">
+        <table className="excel-table">
+          <thead>
+            <tr>
+              <th style={{ width: '35px' }}>No.</th>
+              <th style={{ width: '130px' }}>Tanggal Bon *</th>
+              <th style={{ width: '180px' }}>PIC (Penerima Bon) *</th>
+              <th style={{ minWidth: '250px' }}>Keterangan / Tujuan Penggunaan *</th>
+              <th style={{ width: '150px' }}>Nominal Bon (Rp) *</th>
+              <th style={{ width: '45px' }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={idx}>
+                <td className="excel-row-num">{idx + 1}</td>
+                <td>
+                  <input 
+                    type="date" 
+                    className="excel-input" 
+                    value={row.tanggal} 
+                    onChange={e => handleCellChange(idx, 'tanggal', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    placeholder="Nama penerima bon" 
+                    value={row.pic} 
+                    onChange={e => handleCellChange(idx, 'pic', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    placeholder="Contoh: Belanja bahan ATK" 
+                    value={row.keterangan} 
+                    onChange={e => handleCellChange(idx, 'keterangan', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="number" 
+                    className="excel-input" 
+                    placeholder="Nominal" 
+                    min="0"
+                    value={row.jumlah} 
+                    onChange={e => handleCellChange(idx, 'jumlah', e.target.value)}
+                  />
+                </td>
+                <td style={{ textAlign: 'center', padding: 0 }}>
+                  <button 
+                    type="button" 
+                    onClick={() => handleDeleteRow(idx)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: '0.4rem' }}
+                    title="Hapus baris"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="input-group" style={{ marginBottom: '1rem' }}>
-        <label className="input-label" htmlFor="keterangan">Keterangan / Tujuan Penggunaan *</label>
-        <input required type="text" id="keterangan" name="keterangan" className="input-field" placeholder="Cth: Belanja konsumsi SPMB" value={formData.keterangan} onChange={handleChange} />
-      </div>
-
-      <div className="input-group">
-        <label className="input-label" htmlFor="jumlah">Nominal (Rp) *</label>
-        <input required type="number" id="jumlah" name="jumlah" className="input-field" placeholder="500000" min="1" value={formData.jumlah} onChange={handleChange} />
-      </div>
-
-      <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
         <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Menyimpan...' : 'Simpan Bon'}
+          {loading ? 'Menyimpan...' : `Simpan ${rows.filter(r => r.pic.trim() !== '' && r.keterangan.trim() !== '' && r.jumlah !== '').length} Bon`}
         </button>
       </div>
     </form>

@@ -81,18 +81,22 @@ function parseDate(val) {
   if (m) {
     var months = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
     var mon = months[m[2].toLowerCase()];
-    var year = parseInt(m[3]);
+    var year = parseInt(m[3], 10);
     if (year < 100) year += 2000;
-    return new Date(year, mon, parseInt(m[1]));
+    return new Date(year, mon, parseInt(m[1], 10));
   }
 
   // YYYY-MM-DD
   m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+  if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
 
   // DD/MM/YYYY
   m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+  if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+
+  // General fallback for ISO date strings, UTC strings etc.
+  var parsed = new Date(str);
+  if (!isNaN(parsed.getTime())) return parsed;
 
   return null;
 }

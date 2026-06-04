@@ -184,3 +184,36 @@ function formatBonMonitorMessage() {
   text += '\n💡 <i>Klik salah satu kode <b>/lunas_...</b> di atas untuk melunaskan secara instan!</i>';
   return text;
 }
+
+/**
+ * Notifikasi transaksi bulk untuk Telegram
+ */
+function notifyNewTransactionBulk(successList) {
+  var text = '🟢🔴 <b>' + successList.length + ' Transaksi Baru Dicatat (Bulk)</b>\n\n';
+  for (var i = 0; i < Math.min(successList.length, 10); i++) {
+    var trx = successList[i];
+    var emoji = trx.jenis === 'DEBIT' ? '🟢' : '🔴';
+    text += emoji + ' ' + trx.keterangan + ' | 💰 ' + trx.jumlah_formatted + '\n';
+  }
+  if (successList.length > 10) {
+    text += '...dan ' + (successList.length - 10) + ' transaksi lainnya.\n';
+  }
+  var lastSaldo = successList[successList.length - 1].saldo_baru;
+  text += '\n💳 Saldo Terkini: ' + formatRupiahSpaced(lastSaldo);
+  sendToDefaultChat(text);
+}
+
+/**
+ * Notifikasi bon bulk untuk Telegram
+ */
+function notifyNewBonBulk(successList) {
+  var text = '📋 <b>' + successList.length + ' Bon Baru Dicatat (Bulk)</b>\n\n';
+  for (var i = 0; i < Math.min(successList.length, 10); i++) {
+    var bon = successList[i];
+    text += '• 👤 <b>' + bon.pic + '</b> | 💰 ' + bon.nominal_formatted + '\n  📝 ' + bon.keterangan + '\n';
+  }
+  if (successList.length > 10) {
+    text += '...dan ' + (successList.length - 10) + ' bon lainnya.\n';
+  }
+  sendToDefaultChat(text);
+}

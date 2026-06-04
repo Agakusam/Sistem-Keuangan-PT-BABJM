@@ -17,6 +17,11 @@ function doGet(e) {
     }));
   }
 
+  // Inspect sheets — no auth for debugging
+  if (action === 'inspect') {
+    return jsonOutput(inspectSheets());
+  }
+ 
   // PIN validation — no API key needed
   if (action === 'validatePin') {
     var pin = params.pin || '';
@@ -52,6 +57,9 @@ function doGet(e) {
     // Dashboard
     case 'getDashboard':
       return jsonOutput(getDashboardData());
+    case 'rebuildDashboard':
+      var rebuildRes = setupGSheetDashboard();
+      return jsonOutput(successResponse(null, rebuildRes));
 
     // Config
     case 'getConfig':
@@ -112,11 +120,61 @@ function doPost(e) {
         if (cashResult.success) notifyNewTransaction(cashResult.data);
         return jsonOutput(cashResult);
 
+      case 'addCashBulk':
+        var list = body.transactions || [];
+        var successList = [];
+        var errors = [];
+        for (var i = 0; i < list.length; i++) {
+          var item = list[i];
+          var res = addCashTransaction(item);
+          if (res.success) {
+            successList.push(res.data);
+          } else {
+            errors.push('Baris ' + (i+1) + ': ' + res.error);
+          }
+        }
+        if (errors.length > 0 && successList.length === 0) {
+          return jsonOutput(errorResponse('Gagal menginput semua transaksi:\n' + errors.join('\n')));
+        }
+        if (successList.length > 0) {
+          notifyNewTransactionBulk(successList);
+        }
+        return jsonOutput(successResponse({
+          success_count: successList.length,
+          error_count: errors.length,
+          errors: errors
+        }, 'Berhasil menyimpan ' + successList.length + ' transaksi' + (errors.length > 0 ? ', gagal ' + errors.length + ' baris.' : '.')));
+
       // Bon
       case 'addBon':
         var bonResult = addBon(body);
         if (bonResult.success) notifyNewBon(bonResult.data);
         return jsonOutput(bonResult);
+
+      case 'addBonBulk':
+        var list = body.bons || [];
+        var successList = [];
+        var errors = [];
+        for (var i = 0; i < list.length; i++) {
+          var item = list[i];
+          var res = addBon(item);
+          if (res.success) {
+            successList.push(res.data);
+          } else {
+            errors.push('Baris ' + (i+1) + ': ' + res.error);
+          }
+        }
+        if (errors.length > 0 && successList.length === 0) {
+          return jsonOutput(errorResponse('Gagal menginput semua bon:\n' + errors.join('\n')));
+        }
+        if (successList.length > 0) {
+          notifyNewBonBulk(successList);
+        }
+        return jsonOutput(successResponse({
+          success_count: successList.length,
+          error_count: errors.length,
+          errors: errors
+        }, 'Berhasil menyimpan ' + successList.length + ' bon' + (errors.length > 0 ? ', gagal ' + errors.length + ' baris.' : '.')));
 
       case 'settleBon':
         var settleResult = settleBon(body);
@@ -338,4 +396,24 @@ function testOnEdit() {
   if (lastRow >= 2) {
     _syncBonRowToCash(lastRow);
   }
+}
+
+function inspectSheets() {
+  var ss = getSpreadsheet();
+  var result = {};
+  var sheets = ss.getSheets();
+  for (var i = 0; i < sheets.length; i++) {
+    var name = sheets[i].getName();
+    var lastRow = sheets[i].getLastRow();
+    var lastCol = sheets[i].getLastColumn();
+    var rowsToFetch = Math.max(1, Math.min(lastRow, 30));
+    var colsToFetch = Math.max(1, Math.min(lastCol, 15));
+    var range = sheets[i].getRange(1, 1, rowsToFetch, colsToFetch);
+    result[name] = {
+      dimensions: { rows: lastRow, cols: lastCol },
+      values: range.getValues(),
+      formulas: range.getFormulas()
+    };
+  }
+  return successResponse(result);
 }

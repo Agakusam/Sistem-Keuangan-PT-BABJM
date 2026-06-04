@@ -388,3 +388,129 @@ tr:last-child td {
     padding: 1rem;
   }
 }
+
+/* ==========================================================================
+   Excel-like UI Styling for Grid Sheets and Tables
+   ========================================================================== */
+
+.excel-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-card);
+  margin-bottom: 1.5rem;
+}
+
+.excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.8rem;
+}
+
+.excel-table th {
+  background-color: #f1f5f9;
+  color: #334155;
+  font-weight: 600;
+  text-transform: none;
+  font-size: 0.8rem;
+  letter-spacing: normal;
+  border: 1px solid #cbd5e1;
+  padding: 0.4rem 0.6rem;
+  text-align: center;
+  user-select: none;
+}
+
+.excel-table td {
+  border: 1px solid #cbd5e1;
+  padding: 0.35rem 0.5rem;
+  color: var(--text-secondary);
+  height: 32px;
+  vertical-align: middle;
+}
+
+.excel-table tr:hover td {
+  background-color: rgba(99, 102, 241, 0.04);
+}
+
+/* Excel Row Index Column */
+.excel-row-num {
+  background-color: #f1f5f9;
+  color: #64748b;
+  text-align: center;
+  font-weight: 500;
+  width: 35px;
+  border-right: 2px solid #cbd5e1 !important;
+  user-select: none;
+}
+
+/* Dark Mode Excel Styles */
+@media (prefers-color-scheme: dark) {
+  .excel-table th {
+    background-color: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+  }
+  .excel-table td {
+    border: 1px solid #334155;
+    color: #cbd5e1;
+  }
+  .excel-row-num {
+    background-color: #1e293b;
+    color: #64748b;
+    border-right: 2px solid #334155 !important;
+  }
+  .excel-table tr:hover td {
+    background-color: rgba(99, 102, 241, 0.1);
+  }
+}
+
+/* Grid Editable Inputs */
+.excel-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 0.25rem;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  outline: none;
+}
+
+.excel-input:focus {
+  background-color: #fef08a; /* Soft Excel Yellow */
+  color: #0f172a;
+}
+
+.excel-select {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.excel-select:focus {
+  background-color: #fef08a;
+  color: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+  .excel-input:focus {
+    background-color: #1e293b;
+    color: #f8fafc;
+  }
+  .excel-select:focus {
+    background-color: #1e293b;
+    color: #f8fafc;
+  }
+}

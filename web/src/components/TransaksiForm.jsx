@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { postToGas } from '@/lib/api';
+import { Plus, Trash2 } from 'lucide-react';
 
 export default function TransaksiForm({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   
-  const [formData, setFormData] = useState({
+  const createEmptyRow = () => ({
     jenis: 'KREDIT',
     tanggal: new Date().toISOString().split('T')[0],
     keterangan: '',
@@ -19,26 +21,64 @@ export default function TransaksiForm({ onSuccess }) {
     lampiran: ''
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  const [rows, setRows] = useState([
+    createEmptyRow(),
+    createEmptyRow(),
+    createEmptyRow()
+  ]);
+
+  const handleCellChange = (index, field, value) => {
+    setRows(prev => prev.map((row, idx) => {
+      if (idx === index) {
+        return { ...row, [field]: value };
+      }
+      return row;
+    }));
+  };
+
+  const handleAddRow = () => {
+    setRows(prev => [...prev, createEmptyRow()]);
+  };
+
+  const handleDeleteRow = (index) => {
+    if (rows.length === 1) {
+      setRows([createEmptyRow()]);
+      return;
+    }
+    setRows(prev => prev.filter((_, idx) => idx !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMsg('');
+
+    // Filter only rows that have keterangan and jumlah filled
+    const validRows = rows.filter(r => r.keterangan.trim() !== '' && r.jumlah !== '');
+    if (validRows.length === 0) {
+      setError('Mohon isi minimal 1 baris transaksi (Keterangan & Nominal wajib diisi).');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const res = await postToGas('addCash', {
-        ...formData,
-        sumber: 'WEB'
+      const res = await postToGas('addCashBulk', {
+        transactions: validRows.map(r => ({
+          ...r,
+          jumlah: parseFloat(r.jumlah)
+        }))
       });
 
       if (res.success) {
-        if (onSuccess) onSuccess(res.data);
+        setSuccessMsg(res.message || 'Transaksi berhasil disimpan!');
+        if (onSuccess) {
+          setTimeout(() => {
+            onSuccess();
+          }, 1000);
+        }
       } else {
-        setError(res.error || 'Gagal menyimpan transaksi');
+        setError(res.error || 'Gagal menyimpan transaksi bulk');
       }
     } catch (err) {
       setError(err.message);
@@ -49,73 +89,145 @@ export default function TransaksiForm({ onSuccess }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3 style={{ marginBottom: '1.5rem' }}>Input Transaksi Baru</h3>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h3 style={{ margin: 0 }}>Input Massal Transaksi (Excel Grid Mode)</h3>
+        <button 
+          type="button" 
+          className="btn btn-secondary" 
+          onClick={handleAddRow}
+          style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+        >
+          <Plus size={14} /> Tambah Baris
+        </button>
+      </div>
+
+      <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '1rem' }}>
+        * Ketik langsung pada sel tabel untuk mengedit data seperti di Excel. Baris kosong tidak akan disimpan.
+      </p>
       
-      {error && <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>{error}</div>}
+      {error && <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem' }}>{error}</div>}
+      {successMsg && <div style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem' }}>{successMsg}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-        <div className="input-group">
-          <label className="input-label">Jenis Transaksi *</label>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input type="radio" name="jenis" value="DEBIT" checked={formData.jenis === 'DEBIT'} onChange={handleChange} /> 
-              <span style={{ color: 'var(--success)', fontWeight: 500 }}>Masuk (Debit)</span>
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-              <input type="radio" name="jenis" value="KREDIT" checked={formData.jenis === 'KREDIT'} onChange={handleChange} /> 
-              <span style={{ color: 'var(--danger)', fontWeight: 500 }}>Keluar (Kredit)</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="tanggal">Tanggal *</label>
-          <input required type="date" id="tanggal" name="tanggal" className="input-field" value={formData.tanggal} onChange={handleChange} />
-        </div>
+      <div className="excel-table-container" style={{ maxHeight: '400px' }}>
+        <table className="excel-table">
+          <thead>
+            <tr>
+              <th style={{ width: '35px' }}>No.</th>
+              <th style={{ width: '120px' }}>Jenis *</th>
+              <th style={{ width: '130px' }}>Tanggal *</th>
+              <th style={{ minWidth: '220px' }}>Keterangan *</th>
+              <th style={{ width: '130px' }}>Nominal (Rp) *</th>
+              <th style={{ width: '110px' }}>PIC</th>
+              <th style={{ width: '110px' }}>No. ID</th>
+              <th style={{ width: '130px' }}>Tgl. Nota</th>
+              <th style={{ width: '130px' }}>Tgl. Tagih</th>
+              <th style={{ minWidth: '150px' }}>Link Lampiran</th>
+              <th style={{ width: '45px' }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={idx}>
+                <td className="excel-row-num">{idx + 1}</td>
+                <td>
+                  <select 
+                    className="excel-select" 
+                    value={row.jenis} 
+                    onChange={e => handleCellChange(idx, 'jenis', e.target.value)}
+                  >
+                    <option value="KREDIT">Keluar (Kredit)</option>
+                    <option value="DEBIT">Masuk (Debit)</option>
+                  </select>
+                </td>
+                <td>
+                  <input 
+                    type="date" 
+                    className="excel-input" 
+                    value={row.tanggal} 
+                    onChange={e => handleCellChange(idx, 'tanggal', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    placeholder="Contoh: Beli ATK" 
+                    value={row.keterangan} 
+                    onChange={e => handleCellChange(idx, 'keterangan', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="number" 
+                    className="excel-input" 
+                    placeholder="Nominal" 
+                    min="0"
+                    value={row.jumlah} 
+                    onChange={e => handleCellChange(idx, 'jumlah', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    placeholder="PIC" 
+                    value={row.pic} 
+                    onChange={e => handleCellChange(idx, 'pic', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    placeholder="No. ID" 
+                    value={row.no_id} 
+                    onChange={e => handleCellChange(idx, 'no_id', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="date" 
+                    className="excel-input" 
+                    value={row.tgl_nota} 
+                    onChange={e => handleCellChange(idx, 'tgl_nota', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="date" 
+                    className="excel-input" 
+                    value={row.tgl_penagihan} 
+                    onChange={e => handleCellChange(idx, 'tgl_penagihan', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    placeholder="Link Drive/Dokumen" 
+                    value={row.lampiran} 
+                    onChange={e => handleCellChange(idx, 'lampiran', e.target.value)}
+                  />
+                </td>
+                <td style={{ textAlign: 'center', padding: 0 }}>
+                  <button 
+                    type="button" 
+                    onClick={() => handleDeleteRow(idx)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: '0.4rem' }}
+                    title="Hapus baris"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      <div className="input-group">
-        <label className="input-label" htmlFor="keterangan">Keterangan *</label>
-        <input required type="text" id="keterangan" name="keterangan" className="input-field" placeholder="Cth: Beli ATK Kantor" value={formData.keterangan} onChange={handleChange} />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        <div className="input-group">
-          <label className="input-label" htmlFor="jumlah">Nominal (Rp) *</label>
-          <input required type="number" id="jumlah" name="jumlah" className="input-field" placeholder="50000" min="1" value={formData.jumlah} onChange={handleChange} />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="pic">PIC (Opsional)</label>
-          <input type="text" id="pic" name="pic" className="input-field" placeholder="Cth: Fita" value={formData.pic} onChange={handleChange} />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="no_id">No. ID / Referensi (Opsional)</label>
-          <input type="text" id="no_id" name="no_id" className="input-field" placeholder="Cth: 1773712010" value={formData.no_id} onChange={handleChange} />
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-        <div className="input-group">
-          <label className="input-label" htmlFor="tgl_nota">Tgl. Nota (Opsional)</label>
-          <input type="date" id="tgl_nota" name="tgl_nota" className="input-field" value={formData.tgl_nota} onChange={handleChange} />
-        </div>
-
-        <div className="input-group">
-          <label className="input-label" htmlFor="tgl_penagihan">Tgl. Penagihan (Opsional)</label>
-          <input type="date" id="tgl_penagihan" name="tgl_penagihan" className="input-field" value={formData.tgl_penagihan} onChange={handleChange} />
-        </div>
-      </div>
-
-      <div className="input-group" style={{ marginTop: '1rem' }}>
-        <label className="input-label" htmlFor="lampiran">Lampiran URL/Link (Opsional)</label>
-        <input type="text" id="lampiran" name="lampiran" className="input-field" placeholder="Cth: https://drive.google.com/..." value={formData.lampiran} onChange={handleChange} />
-      </div>
-
-      <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
         <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Menyimpan...' : 'Simpan Transaksi'}
+          {loading ? 'Menyimpan...' : `Simpan ${rows.filter(r => r.keterangan.trim() !== '' && r.jumlah !== '').length} Transaksi`}
         </button>
       </div>
     </form>

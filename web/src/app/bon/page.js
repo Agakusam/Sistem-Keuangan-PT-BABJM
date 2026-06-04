@@ -96,14 +96,16 @@ export default function BonPage() {
           />
         </div>
 
-        <div className="table-container">
+        <div className="excel-table-container">
           {loading ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat data...</div>
           ) : (
-            <table>
+            <table className="excel-table">
               <thead>
                 <tr>
+                  <th style={{ width: '35px' }}>No.</th>
                   <th>ID Bon</th>
+                  <th>Tanggal</th>
                   <th>PIC</th>
                   <th>Keterangan</th>
                   <th>Nominal</th>
@@ -114,7 +116,9 @@ export default function BonPage() {
               <tbody>
                 {filteredData.length > 0 ? filteredData.map((b, idx) => (
                   <tr key={idx}>
+                    <td className="excel-row-num">{idx + 1}</td>
                     <td style={{ fontWeight: 600 }}>{b.id_bon}</td>
+                    <td>{b.tanggal ? b.tanggal.split('T')[0] : '-'}</td>
                     <td>{b.pic}</td>
                     <td>{b.keterangan}</td>
                     <td style={{ color: 'var(--primary)', fontWeight: 500 }}>{b.nominal}</td>
@@ -147,7 +151,7 @@ export default function BonPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data bon</td>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data bon</td>
                   </tr>
                 )}
               </tbody>

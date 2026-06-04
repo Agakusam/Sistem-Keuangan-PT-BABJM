@@ -378,7 +378,7 @@ function setupGSheetDashboard() {
   d.getRange('H5').setValue('SALDO AWAL').setBackground('#0369a1').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
   d.getRange('I5').setValue('SALDO AKHIR').setBackground('#0f172a').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
   
-  // Summary Metrics Values Formulations (using Indonesian local formula divider ;)
+  // Summary Metrics Values Formulations (using Indonesian semicolon divider as required by sheet locale)
   d.getRange('E6').setFormula('=SUMIFS(Cash_log!H7:H; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
   d.getRange('F6').setFormula('=SUMIFS(Cash_log!I7:I; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
   d.getRange('G6').setFormula('=COUNTIFS(Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('#,##0');

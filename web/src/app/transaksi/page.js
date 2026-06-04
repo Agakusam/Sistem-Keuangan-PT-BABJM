@@ -216,13 +216,14 @@ export default function TransaksiPage() {
           </div>
         </div>
 
-        <div className="table-container">
+        <div className="excel-table-container">
           {loading ? (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat data...</div>
           ) : (
-            <table>
+            <table className="excel-table">
               <thead>
                 <tr>
+                  <th style={{ width: '35px' }}>No.</th>
                   <th>Tanggal</th>
                   <th>Keterangan</th>
                   <th>PIC</th>
@@ -236,7 +237,8 @@ export default function TransaksiPage() {
               <tbody>
                 {filteredData.length > 0 ? filteredData.map((t, idx) => (
                   <tr key={idx}>
-                    <td>{t.tanggal}</td>
+                    <td className="excel-row-num">{idx + 1}</td>
+                    <td>{t.tanggal ? t.tanggal.split('T')[0] : '-'}</td>
                     <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
                       {t.debit_value > 0 ? (
                         <span>
@@ -265,7 +267,7 @@ export default function TransaksiPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data transaksi dalam rentang ini</td>
+                    <td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data transaksi dalam rentang ini</td>
                   </tr>
                 )}
               </tbody>
