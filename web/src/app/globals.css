@@ -765,3 +765,48 @@ tr:last-child td {
   background-color: #0f6c38 !important;
 }
 
+/* Professional Print Styles */
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  .print-only {
+    display: block !important;
+  }
+  
+  .print-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .print-title {
+    font-size: 15pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    margin-bottom: 0.15rem !important;
+    text-transform: uppercase;
+  }
+  
+  .print-subtitle {
+    font-size: 11pt !important;
+    font-weight: bold !important;
+    color: #000000 !important;
+    margin-bottom: 0.35rem !important;
+    text-transform: uppercase;
+  }
+  
+  .print-period {
+    font-size: 9pt !important;
+    color: #000000 !important;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .print-divider {
+    border-bottom: 2px double #000000;
+    margin-bottom: 1.25rem;
+  }
+}
+
+

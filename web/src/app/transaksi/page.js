@@ -386,12 +386,20 @@ export default function TransaksiPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      {/* Professional Print Header */}
+      <div className="print-header print-only">
+        <h1 className="print-title">PT BUMI ASSALAM BULIAN JAYA MANDIRI (PT BABJM)</h1>
+        <h2 className="print-subtitle">LAPORAN TRANSAKSI PETTY CASH (KAS KECIL)</h2>
+        <p className="print-period">Periode: {formatDate(startDate)} s/d {formatDate(endDate)}</p>
+        <div className="print-divider"></div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }} className="no-print">
         <div>
           <h2>Data Transaksi Kas (Kas_log)</h2>
           <p>Kelola pencatatan kas masuk dan keluar secara dinamis</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }} className="no-print">
+        <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-secondary" onClick={handleExportCSV}>
             <Download size={18} /> Export Excel
           </button>

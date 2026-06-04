@@ -420,12 +420,20 @@ export default function BonPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      {/* Professional Print Header */}
+      <div className="print-header print-only">
+        <h1 className="print-title">PT BUMI ASSALAM BULIAN JAYA MANDIRI (PT BABJM)</h1>
+        <h2 className="print-subtitle">LAPORAN MONITORING BON KAS</h2>
+        <p className="print-period">Tanggal Cetak: {formatDate(new Date().toISOString().split('T')[0])}</p>
+        <div className="print-divider"></div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }} className="no-print">
         <div>
           <h2>Monitoring Bon Kas</h2>
           <p>Catat dan pantau status pertanggungan bon kas</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }} className="no-print">
+        <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-secondary" onClick={() => window.print()}>
             <FileText size={18} /> Cetak PDF
           </button>
