@@ -39,6 +39,17 @@ const formatRp = (num) => {
   return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
+// Format Date helper to DD-MM-YYYY
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const cleanStr = String(dateStr).includes('T') ? dateStr.split('T')[0] : dateStr;
+  const parts = cleanStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return cleanStr;
+};
+
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -222,7 +233,7 @@ export default function Dashboard() {
                     const amountColor = isDebit ? 'var(--success)' : 'var(--danger)';
                     return (
                       <tr key={idx}>
-                        <td>{t.tanggal}</td>
+                        <td>{formatDate(t.tanggal)}</td>
                         <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{t.keterangan}</td>
                         <td style={{ textAlign: 'right', color: amountColor, fontWeight: 600 }}>{amountText}</td>
                       </tr>

@@ -60,7 +60,6 @@ function doGet(e) {
     case 'rebuildDashboard':
       var rebuildRes = setupGSheetDashboard();
       return jsonOutput(successResponse(null, rebuildRes));
-
     // Config
     case 'getConfig':
       return jsonOutput(successResponse({
@@ -372,6 +371,7 @@ function _syncBonRowToCash(row) {
       jenis: 'KREDIT',
       pic: pic,
       no_id: idBon,
+      tanggal: parseDate(values[1]) || new Date(),
       sumber: 'GSHEET_ONEDIT'
     });
   }

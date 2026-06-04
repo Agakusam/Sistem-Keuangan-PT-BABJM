@@ -100,10 +100,22 @@ export default function Sidebar() {
         })}
       </nav>
       
-      <div style={{ position: 'absolute', bottom: '2rem', left: '1.5rem', right: '1.5rem' }}>
-        <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+      <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', right: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div className="glass-card" style={{ padding: '0.75rem', textAlign: 'center' }}>
           <p style={{ fontSize: '0.75rem', fontWeight: 'bold' }}>Saldo Kas Saat Ini</p>
           <h3 style={{ color: 'var(--primary)', marginTop: '0.25rem' }}>{saldo}</h3>
+        </div>
+        
+        {/* User profile & Online Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>
+            AD
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Administrator</span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Petty Cash</span>
+          </div>
+          <span className="badge badge-success" style={{ padding: '2px 6px', fontSize: '0.65rem' }}>Online</span>
         </div>
       </div>
     </aside>

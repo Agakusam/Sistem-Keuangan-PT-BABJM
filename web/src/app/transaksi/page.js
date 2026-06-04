@@ -16,15 +16,57 @@ export default function TransaksiPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Excel filter state variables
+  const [filtersState, setFiltersState] = useState({
+    tanggal: { checked: null },
+    keterangan: { checked: null },
+    pic: { checked: null },
+    no_id: { checked: null },
+    debit: { checked: null },
+    kredit: { checked: null },
+    saldo_akhir: { checked: null }
+  });
+  const [sortCol, setSortCol] = useState(null);
+  const [sortDir, setSortDir] = useState(null);
+  const [activeFilterCol, setActiveFilterCol] = useState(null);
+  const [tempSearch, setTempSearch] = useState('');
+  const [tempChecked, setTempChecked] = useState(new Set());
+
+  // Date formatter DD-MM-YYYY
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const cleanStr = String(dateStr).includes('T') ? dateStr.split('T')[0] : dateStr;
+    const parts = cleanStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return cleanStr;
+  };
+
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setActiveFilterCol(null);
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
   
-  // Date range state
+  // Date range state in local timezone to avoid UTC boundary offset bugs
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const getDates = () => {
     const today = new Date();
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(today.getDate() - 7);
     return {
-      start: oneWeekAgo.toISOString().split('T')[0],
-      end: today.toISOString().split('T')[0]
+      start: getLocalDateString(oneWeekAgo),
+      end: getLocalDateString(today)
     };
   };
   
@@ -87,15 +129,260 @@ export default function TransaksiPage() {
     loadData(startDate, endDate);
   };
 
-  const handleExport = () => {
-    alert(`Fitur Export akan mengekspor data dari tanggal ${startDate} sampai ${endDate}`);
+  const handleExportCSV = () => {
+    let csvContent = "sep=;\n";
+    csvContent += "No.;Tanggal;Keterangan;PIC;No. ID;Lampiran;Debit;Kredit;Saldo Akhir\n";
+    
+    filteredData.forEach((t, idx) => {
+      const no = idx + 1;
+      const tgl = formatDate(t.tanggal);
+      const ket = t.debit_value > 0 
+        ? (t.keterangan_debit || t.keterangan || '') 
+        : (t.keterangan_kredit || t.keterangan || '');
+      const pic = t.pic || '';
+      const noId = t.no_id || '';
+      const lampiran = t.lampiran || '';
+      const deb = t.debit !== 'Rp -' ? t.debit : '';
+      const kre = t.kredit !== 'Rp -' ? t.kredit : '';
+      const sal = t.saldo_akhir || '';
+      
+      const clean = (str) => String(str).replace(/;/g, ',').replace(/\n/g, ' ');
+      
+      csvContent += `${no};${clean(tgl)};${clean(ket)};${clean(pic)};${clean(noId)};${clean(lampiran)};${clean(deb)};${clean(kre)};${clean(sal)}\n`;
+    });
+    
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Laporan_Kas_${startDate}_to_${endDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const filteredData = transactions.filter(t => 
-    (t.keterangan && t.keterangan.toLowerCase().includes(searchTerm.toLowerCase())) || 
-    (t.pic && t.pic.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (t.no_id && String(t.no_id).toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const getCellValue = (row, col) => {
+    switch (col) {
+      case 'tanggal':
+        return formatDate(row.tanggal);
+      case 'keterangan':
+        return row.debit_value > 0 
+          ? (row.keterangan_debit || row.keterangan || '-') 
+          : (row.keterangan_kredit || row.keterangan || '-');
+      case 'pic':
+        return row.pic || '-';
+      case 'no_id':
+        return row.no_id || '-';
+      case 'debit':
+        return row.debit !== 'Rp -' ? row.debit : '(Kosong)';
+      case 'kredit':
+        return row.kredit !== 'Rp -' ? row.kredit : '(Kosong)';
+      case 'saldo_akhir':
+        return row.saldo_akhir || '-';
+      default:
+        return '';
+    }
+  };
+
+  const filteredData = transactions.filter(t => {
+    const matchesSearch = searchTerm === '' || 
+      (t.keterangan && t.keterangan.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.keterangan_debit && t.keterangan_debit.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.keterangan_kredit && t.keterangan_kredit.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.pic && t.pic.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.no_id && String(t.no_id).toLowerCase().includes(searchTerm.toLowerCase()));
+      
+    if (!matchesSearch) return false;
+    
+    for (const col of ['tanggal', 'keterangan', 'pic', 'no_id', 'debit', 'kredit', 'saldo_akhir']) {
+      const checkedValues = filtersState[col]?.checked;
+      if (checkedValues) {
+        const val = getCellValue(t, col);
+        if (!checkedValues.has(val)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  // Apply sorting
+  if (sortCol && sortDir) {
+    filteredData.sort((a, b) => {
+      let valA = getCellValue(a, sortCol);
+      let valB = getCellValue(b, sortCol);
+      
+      if (['debit', 'kredit', 'saldo_akhir'].includes(sortCol)) {
+        const parseNum = (str) => {
+          if (str === '(Kosong)' || str === '-' || !str) return 0;
+          const clean = str.replace(/[^0-9-]/g, '');
+          return parseInt(clean, 10) || 0;
+        };
+        const numA = parseNum(valA);
+        const numB = parseNum(valB);
+        return sortDir === 'asc' ? numA - numB : numB - numA;
+      }
+      
+      if (sortCol === 'tanggal') {
+        const dateA = a.tanggal ? new Date(a.tanggal) : new Date(0);
+        const dateB = b.tanggal ? new Date(b.tanggal) : new Date(0);
+        return sortDir === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      
+      valA = String(valA).toLowerCase();
+      valB = String(valB).toLowerCase();
+      if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+
+  const renderHeaderWithFilter = (label, colName) => {
+    const isFilterActive = filtersState[colName]?.checked !== null;
+    const isSorted = sortCol === colName;
+    const isDropdownOpen = activeFilterCol === colName;
+    
+    const uniqueValues = Array.from(new Set(transactions.map(t => getCellValue(t, colName)))).sort();
+    
+    return (
+      <th className="excel-header-cell" style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.25rem' }}>
+          <span>{label}</span>
+          <button 
+            type="button"
+            className={`excel-filter-trigger ${isFilterActive || isSorted ? 'active' : ''} no-print`}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isDropdownOpen) {
+                setActiveFilterCol(null);
+              } else {
+                setTempSearch('');
+                setTempChecked(filtersState[colName]?.checked ? new Set(filtersState[colName].checked) : new Set(uniqueValues));
+                setActiveFilterCol(colName);
+              }
+            }}
+          >
+            <Filter size={10} />
+          </button>
+        </div>
+        
+        {isDropdownOpen && (
+          <div className="excel-filter-dropdown" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
+            <div 
+              className="excel-filter-option" 
+              onClick={() => {
+                setSortCol(colName);
+                setSortDir('asc');
+                setActiveFilterCol(null);
+              }}
+            >
+              <span>Urutkan A-Z</span>
+            </div>
+            <div 
+              className="excel-filter-option" 
+              onClick={() => {
+                setSortCol(colName);
+                setSortDir('desc');
+                setActiveFilterCol(null);
+              }}
+            >
+              <span>Urutkan Z-A</span>
+            </div>
+            
+            <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }}></div>
+            
+            <input 
+              type="text" 
+              className="excel-filter-search" 
+              placeholder="Cari..." 
+              value={tempSearch}
+              onChange={e => setTempSearch(e.target.value)}
+            />
+            
+            <div className="excel-filter-list">
+              <label className="excel-filter-item">
+                <input 
+                  type="checkbox" 
+                  checked={tempChecked.size === uniqueValues.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setTempChecked(new Set(uniqueValues));
+                    } else {
+                      setTempChecked(new Set());
+                    }
+                  }}
+                />
+                <span style={{ fontWeight: 'bold' }}>(Pilih Semua)</span>
+              </label>
+              
+              {uniqueValues
+                .filter(val => String(val).toLowerCase().includes(tempSearch.toLowerCase()))
+                .map((val, idx) => (
+                  <label key={idx} className="excel-filter-item">
+                    <input 
+                      type="checkbox" 
+                      checked={tempChecked.has(val)}
+                      onChange={(e) => {
+                        const newChecked = new Set(tempChecked);
+                        if (e.target.checked) {
+                          newChecked.add(val);
+                        } else {
+                          newChecked.delete(val);
+                        }
+                        setTempChecked(newChecked);
+                      }}
+                    />
+                    <span>{val}</span>
+                  </label>
+                ))
+              }
+            </div>
+            
+            <div className="excel-filter-actions">
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto' }}
+                onClick={() => {
+                  const newState = { ...filtersState };
+                  newState[colName] = { checked: null };
+                  setFiltersState(newState);
+                  setActiveFilterCol(null);
+                }}
+              >
+                Hapus
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto' }}
+                onClick={() => setActiveFilterCol(null)}
+              >
+                Batal
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                style={{ padding: '2px 6px', fontSize: '0.7rem', height: 'auto', backgroundColor: 'var(--primary)' }}
+                onClick={() => {
+                  const newState = { ...filtersState };
+                  if (tempChecked.size === uniqueValues.length) {
+                    newState[colName] = { checked: null };
+                  } else {
+                    newState[colName] = { checked: tempChecked };
+                  }
+                  setFiltersState(newState);
+                  setActiveFilterCol(null);
+                }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        )}
+      </th>
+    );
+  };
 
   return (
     <div>
@@ -104,9 +391,12 @@ export default function TransaksiPage() {
           <h2>Data Transaksi Kas (Kas_log)</h2>
           <p>Kelola pencatatan kas masuk dan keluar secara dinamis</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-secondary" onClick={handleExport}>
-            <Download size={18} /> Export Laporan
+        <div style={{ display: 'flex', gap: '1rem' }} className="no-print">
+          <button className="btn btn-secondary" onClick={handleExportCSV}>
+            <Download size={18} /> Export Excel
+          </button>
+          <button className="btn btn-secondary" onClick={() => window.print()}>
+            <FileText size={18} /> Cetak PDF
           </button>
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
             <Plus size={18} /> {showForm ? 'Tutup Form' : 'Transaksi Baru'}
@@ -224,21 +514,21 @@ export default function TransaksiPage() {
               <thead>
                 <tr>
                   <th style={{ width: '35px' }}>No.</th>
-                  <th>Tanggal</th>
-                  <th>Keterangan</th>
-                  <th>PIC</th>
-                  <th>No. ID</th>
-                  <th>Lampiran</th>
-                  <th style={{ textAlign: 'right' }}>Debit (Masuk)</th>
-                  <th style={{ textAlign: 'right' }}>Kredit (Keluar)</th>
-                  <th style={{ textAlign: 'right' }}>Saldo Akhir</th>
+                  {renderHeaderWithFilter('Tanggal', 'tanggal')}
+                  {renderHeaderWithFilter('Keterangan', 'keterangan')}
+                  {renderHeaderWithFilter('PIC', 'pic')}
+                  {renderHeaderWithFilter('No. ID', 'no_id')}
+                  <th className="no-print">Lampiran</th>
+                  {renderHeaderWithFilter('Debit (Masuk)', 'debit')}
+                  {renderHeaderWithFilter('Kredit (Keluar)', 'kredit')}
+                  {renderHeaderWithFilter('Saldo Akhir', 'saldo_akhir')}
                 </tr>
               </thead>
               <tbody>
                 {filteredData.length > 0 ? filteredData.map((t, idx) => (
                   <tr key={idx}>
                     <td className="excel-row-num">{idx + 1}</td>
-                    <td>{t.tanggal ? t.tanggal.split('T')[0] : '-'}</td>
+                    <td>{formatDate(t.tanggal)}</td>
                     <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
                       {t.debit_value > 0 ? (
                         <span>
@@ -254,7 +544,7 @@ export default function TransaksiPage() {
                     </td>
                     <td>{t.pic || '-'}</td>
                     <td>{t.no_id || '-'}</td>
-                    <td>
+                    <td className="no-print">
                       {t.lampiran ? (
                         <a href={t.lampiran} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
                           Lihat
@@ -273,6 +563,18 @@ export default function TransaksiPage() {
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Signature Block for Print */}
+        <div className="print-signature-container" style={{ display: 'none' }}>
+          <div>
+            <div style={{ textAlign: 'center', fontSize: '9pt' }}>Dibuat oleh,</div>
+            <div className="print-signature-box">Administrasi / Kasir</div>
+          </div>
+          <div>
+            <div style={{ textAlign: 'center', fontSize: '9pt' }}>Disetujui oleh,</div>
+            <div className="print-signature-box">Pimpinan</div>
+          </div>
         </div>
       </div>
     </div>

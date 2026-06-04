@@ -20,9 +20,12 @@ export async function fetchFromGas(action, params = {}) {
     Object.keys(params).forEach(key => {
       url.searchParams.append(key, params[key]);
     });
+    
+    // Add cache-busting timestamp to prevent browser/CDN caching
+    url.searchParams.append('_t', Date.now().toString());
 
     const response = await fetch(url.toString(), {
-      // cache: 'no-store' // Ensure we get fresh data
+      cache: 'no-store' // Ensure we get fresh data
     });
     
     if (!response.ok) {

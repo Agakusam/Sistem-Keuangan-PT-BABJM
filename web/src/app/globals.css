@@ -514,3 +514,254 @@ tr:last-child td {
     color: #f8fafc;
   }
 }
+
+/* Scrollable Bulk Entry Table Container */
+.excel-bulk-scrollable {
+  max-height: 480px;
+  overflow-y: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-color-scheme: dark) {
+  .excel-bulk-scrollable {
+    border-color: #334155;
+  }
+}
+
+/* Excel-like Auto Filter Dropdown Styles */
+.excel-header-cell {
+  position: relative;
+}
+
+.excel-filter-trigger {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 0.15rem;
+  margin-left: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 3px;
+  vertical-align: middle;
+  transition: all var(--transition-fast);
+}
+
+.excel-filter-trigger:hover, 
+.excel-filter-trigger.active {
+  color: var(--primary) !important;
+  background-color: var(--primary-light);
+}
+
+.excel-filter-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 999;
+  width: 220px;
+  background-color: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: normal;
+  color: var(--text-primary);
+}
+
+.excel-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  transition: background-color var(--transition-fast);
+}
+
+.excel-filter-option:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.excel-filter-search {
+  width: 100%;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  background-color: var(--bg-glass);
+  color: var(--text-primary);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  outline: none;
+}
+
+.excel-filter-list {
+  max-height: 110px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.excel-filter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.35rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.excel-filter-item:hover {
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.excel-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.4rem;
+}
+
+/* Media Print overrides for Landscape PDF & signature blocks */
+@media print {
+  /* Hide standard UI elements */
+  .sidebar,
+  .no-print,
+  button,
+  .btn,
+  .input-field,
+  form,
+  .excel-filter-trigger,
+  .excel-filter-dropdown,
+  input,
+  select {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    font-size: 10pt !important;
+  }
+
+  .page-container {
+    display: block !important;
+  }
+
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .content-area {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .glass-card {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .excel-table-container {
+    border: 1px solid #000000 !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+
+  .excel-table {
+    font-size: 9pt !important;
+    border-collapse: collapse !important;
+  }
+
+  .excel-table th {
+    background-color: #f1f5f9 !important;
+    color: #000000 !important;
+    border: 1px solid #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .excel-table td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+  }
+
+  .excel-row-num {
+    background-color: #f1f5f9 !important;
+    color: #000000 !important;
+    border-right: 1px solid #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+
+  /* Signature Block positioning for printing */
+  .print-signature-container {
+    display: flex !important;
+    justify-content: space-between;
+    margin-top: 3.5rem;
+    page-break-inside: avoid;
+  }
+
+  .print-signature-box {
+    width: 220px;
+    text-align: center;
+    border-top: 1px solid #000000;
+    margin-top: 3.5rem;
+    padding-top: 0.5rem;
+    font-size: 9pt;
+    font-weight: bold;
+  }
+}
+
+/* Excel Green Theme Styling */
+.excel-table-green th {
+  background-color: #107c41 !important;
+  color: #ffffff !important;
+  border-color: #0f6c38 !important;
+}
+.excel-table-green .excel-row-num {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border-right-color: #107c41 !important;
+}
+@media (prefers-color-scheme: dark) {
+  .excel-table-green .excel-row-num {
+    background-color: #1e293b;
+    color: #94a3b8;
+  }
+}
+.excel-green-btn {
+  background-color: #107c41 !important;
+  color: white !important;
+  box-shadow: 0 4px 14px 0 rgba(16, 124, 65, 0.3) !important;
+}
+.excel-green-btn:hover {
+  background-color: #0f6c38 !important;
+}
+

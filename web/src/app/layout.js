@@ -16,15 +16,6 @@ export default function RootLayout({ children }) {
         <div className="page-container">
           <Sidebar />
           <div className="main-content">
-            <header className="header">
-              <h2>Dashboard</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <span className="badge badge-success">Online</span>
-                <div style={{ width: '35px', height: '35px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold' }}>
-                  AD
-                </div>
-              </div>
-            </header>
             <main className="content-area">
               {children}
             </main>

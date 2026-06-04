@@ -382,7 +382,7 @@ function setupGSheetDashboard() {
   d.getRange('E6').setFormula('=SUMIFS(Cash_log!H7:H; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
   d.getRange('F6').setFormula('=SUMIFS(Cash_log!I7:I; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
   d.getRange('G6').setFormula('=COUNTIFS(Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('#,##0');
-  d.getRange('H6').setFormula('=IFERROR(LOOKUP(2; 1/((Cash_log!A$6:A<C5)*(Cash_log!A$6:A<>"")); Cash_log!J$6:J); Cash_log!J$6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('H6').setFormula('=XLOOKUP(C5-1; FILTER(Cash_log!A$6:A; ISNUMBER(Cash_log!A$6:A) * (Cash_log!J$6:J<>"")); FILTER(Cash_log!J$6:J; ISNUMBER(Cash_log!A$6:A) * (Cash_log!J$6:J<>"")); Cash_log!J$6; -1; -1)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
   d.getRange('I6').setFormula('=H6+E6-F6').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
 
   // Borders for Summary Cards and Input

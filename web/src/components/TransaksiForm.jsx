@@ -4,6 +4,12 @@ import { useState } from 'react';
 import { postToGas } from '@/lib/api';
 import { Plus, Trash2 } from 'lucide-react';
 
+// Format Rupiah helper
+const formatRp = (num) => {
+  if (num === null || num === undefined || isNaN(num)) return 'Rp 0';
+  return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
 export default function TransaksiForm({ onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,11 +27,9 @@ export default function TransaksiForm({ onSuccess }) {
     lampiran: ''
   });
 
-  const [rows, setRows] = useState([
-    createEmptyRow(),
-    createEmptyRow(),
-    createEmptyRow()
-  ]);
+  const [rows, setRows] = useState(
+    Array.from({ length: 50 }, () => createEmptyRow())
+  );
 
   const handleCellChange = (index, field, value) => {
     setRows(prev => prev.map((row, idx) => {
@@ -36,8 +40,8 @@ export default function TransaksiForm({ onSuccess }) {
     }));
   };
 
-  const handleAddRow = () => {
-    setRows(prev => [...prev, createEmptyRow()]);
+  const handleAddTenRows = () => {
+    setRows(prev => [...prev, ...Array.from({ length: 10 }, () => createEmptyRow())]);
   };
 
   const handleDeleteRow = (index) => {
@@ -94,10 +98,10 @@ export default function TransaksiForm({ onSuccess }) {
         <button 
           type="button" 
           className="btn btn-secondary" 
-          onClick={handleAddRow}
+          onClick={handleAddTenRows}
           style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
         >
-          <Plus size={14} /> Tambah Baris
+          <Plus size={14} /> Tambah 10 Baris
         </button>
       </div>
 
@@ -108,8 +112,8 @@ export default function TransaksiForm({ onSuccess }) {
       {error && <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem' }}>{error}</div>}
       {successMsg && <div style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.85rem' }}>{successMsg}</div>}
 
-      <div className="excel-table-container" style={{ maxHeight: '400px' }}>
-        <table className="excel-table">
+      <div className="excel-bulk-scrollable" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <table className="excel-table excel-table-green">
           <thead>
             <tr>
               <th style={{ width: '35px' }}>No.</th>
@@ -222,11 +226,21 @@ export default function TransaksiForm({ onSuccess }) {
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr style={{ fontWeight: 'bold', backgroundColor: 'rgba(99, 102, 241, 0.05)' }}>
+              <td className="excel-row-num">Σ</td>
+              <td colSpan="3" style={{ textAlign: 'right', paddingRight: '1rem', borderRight: 'none' }}>Total Nominal:</td>
+              <td style={{ textAlign: 'right', color: 'var(--primary)', borderLeft: 'none' }}>
+                {formatRp(rows.reduce((sum, r) => sum + (parseFloat(r.jumlah) || 0), 0))}
+              </td>
+              <td colSpan="6"></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
+        <button type="submit" className="btn excel-green-btn" disabled={loading}>
           {loading ? 'Menyimpan...' : `Simpan ${rows.filter(r => r.keterangan.trim() !== '' && r.jumlah !== '').length} Transaksi`}
         </button>
       </div>
