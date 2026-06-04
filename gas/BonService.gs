@@ -33,6 +33,17 @@ function addBon(params) {
 
   appendBonRow(rowData);
 
+  // Catat sebagai transaksi kas keluar (Kredit) saat bon dibuat
+  addCashTransaction({
+    keterangan: 'Bon - ' + rowData.pic + ' - ' + rowData.keterangan,
+    jumlah: amount,
+    jenis: 'KREDIT',
+    pic: rowData.pic,
+    no_id: bonId,
+    tanggal: tanggal,
+    sumber: params.sumber || 'SYSTEM'
+  });
+
   return successResponse({
     id_bon: bonId,
     pic: rowData.pic,
@@ -59,13 +70,14 @@ function settleBon(params) {
 
   updateBonStatus(bon._row, 'SUDAH');
 
-  // Catat pengeluaran sebagai transaksi kas keluar (Kredit) saat pertanggungan
+  // Catat pengembalian/pertanggungan sebagai transaksi kas masuk (Debit) saat diselesaikan
   var nominal = parseRupiah(bon.nominal);
   addCashTransaction({
-    keterangan: 'Pertanggungan Bon - ' + bon.pic + ' ' + bon.keterangan,
+    keterangan: 'Pertanggungan Bon - ' + bon.pic + ' - ' + bon.keterangan,
     jumlah: nominal,
-    jenis: 'KREDIT',
+    jenis: 'DEBIT',
     pic: bon.pic,
+    no_id: bon.id_bon,
     sumber: params.sumber || 'SYSTEM'
   });
 

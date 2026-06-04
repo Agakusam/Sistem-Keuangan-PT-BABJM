@@ -197,10 +197,13 @@ function readBonRows() {
     // Skip empty rows
     if (!r[0] && !r[2] && !r[3]) continue;
 
+    var rawStatus = String(r[5] || 'BELUM').trim().toUpperCase();
+    var parsedStatus = (rawStatus === 'SUDAH' || rawStatus === 'LUNAS') ? 'SUDAH' : 'BELUM';
+
     var tanggal = parseDate(r[1]);
     var daysAgo = tanggal ? daysBetween(tanggal, new Date()) : 0;
     var alertLevel = 'NORMAL';
-    if (String(r[5]).toUpperCase() === 'BELUM') {
+    if (parsedStatus === 'BELUM') {
       if (daysAgo >= BON_MAX_DAYS) alertLevel = 'OVERDUE';
       else if (daysAgo >= BON_WARNING_DAYS) alertLevel = 'WARNING';
     }
@@ -212,7 +215,7 @@ function readBonRows() {
       pic: r[2],
       keterangan: r[3],
       nominal: r[4],
-      status: r[5] || 'BELUM',
+      status: parsedStatus,
       days_ago: daysAgo,
       alert_level: alertLevel
     });
