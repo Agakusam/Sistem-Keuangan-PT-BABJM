@@ -40,6 +40,91 @@ export default function TransaksiForm({ onSuccess }) {
     }));
   };
 
+  const handleKeyDown = (e, rowIndex, field) => {
+    // Enter / ArrowDown / ArrowUp navigation
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const nextInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="${field}"]`);
+      if (nextInput) {
+        nextInput.focus();
+        if (nextInput.select) nextInput.select();
+      }
+    } else if (e.key === 'ArrowDown') {
+      const nextInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="${field}"]`);
+      if (nextInput) {
+        nextInput.focus();
+        if (nextInput.select) nextInput.select();
+      }
+    } else if (e.key === 'ArrowUp' && rowIndex > 0) {
+      const prevInput = document.querySelector(`[data-row="${rowIndex - 1}"][data-col="${field}"]`);
+      if (prevInput) {
+        prevInput.focus();
+        if (prevInput.select) prevInput.select();
+      }
+    }
+    
+    // Ctrl + D: Copy value from the cell above (Fill Down)
+    if (e.ctrlKey && e.key === 'd') {
+      e.preventDefault();
+      if (rowIndex > 0) {
+        setRows(prevRows => {
+          const newRows = prevRows.map(r => ({ ...r }));
+          newRows[rowIndex][field] = newRows[rowIndex - 1][field];
+          return newRows;
+        });
+      }
+    }
+  };
+
+  const handlePaste = (e, rowIndex, colKey) => {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    const pastedText = clipboardData.getData('text');
+    
+    if (pastedText.includes('\t') || pastedText.includes('\n')) {
+      e.preventDefault();
+      
+      const rowsData = pastedText.split(/\r?\n/).map(row => row.split('\t'));
+      const colOrder = ['jenis', 'tanggal', 'keterangan', 'jumlah', 'pic', 'no_id', 'tgl_nota'];
+      const startColIndex = colOrder.indexOf(colKey);
+      
+      if (startColIndex === -1) return;
+      
+      setRows(prevRows => {
+        const newRows = prevRows.map(r => ({ ...r }));
+        
+        rowsData.forEach((rowCells, rOffset) => {
+          const targetRowIndex = rowIndex + rOffset;
+          if (targetRowIndex < newRows.length) {
+            rowCells.forEach((cellValue, cOffset) => {
+              const targetColIndex = startColIndex + cOffset;
+              if (targetColIndex < colOrder.length) {
+                const colName = colOrder[targetColIndex];
+                let cleanVal = cellValue.trim();
+                
+                if (colName === 'jenis') {
+                  const upper = cleanVal.toUpperCase();
+                  if (upper.startsWith('D') || upper.includes('MASUK') || upper.includes('DEB')) {
+                    cleanVal = 'DEBIT';
+                  } else {
+                    cleanVal = 'KREDIT';
+                  }
+                }
+                
+                if (colName === 'jumlah') {
+                  cleanVal = cleanVal.replace(/[^0-9.-]/g, '');
+                }
+                
+                newRows[targetRowIndex][colName] = cleanVal;
+              }
+            });
+          }
+        });
+        
+        return newRows;
+      });
+    }
+  };
+
   const handleAddTenRows = () => {
     setRows(prev => [...prev, ...Array.from({ length: 10 }, () => createEmptyRow())]);
   };
@@ -139,21 +224,45 @@ export default function TransaksiForm({ onSuccess }) {
               <tr key={idx}>
                 <td className="excel-row-num">{idx + 1}</td>
                 <td>
-                  <select 
-                    className="excel-select" 
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    style={{ 
+                      textTransform: 'uppercase', 
+                      fontWeight: 'bold', 
+                      textAlign: 'center',
+                      color: row.jenis === 'DEBIT' ? 'var(--success)' : 'var(--danger)' 
+                    }}
+                    placeholder="KREDIT / DEBIT" 
                     value={row.jenis} 
-                    onChange={e => handleCellChange(idx, 'jenis', e.target.value)}
-                  >
-                    <option value="KREDIT">Keluar (Kredit)</option>
-                    <option value="DEBIT">Masuk (Debit)</option>
-                  </select>
+                    data-row={idx}
+                    data-col="jenis"
+                    onChange={e => {
+                      const val = e.target.value.toUpperCase();
+                      handleCellChange(idx, 'jenis', val);
+                    }}
+                    onBlur={e => {
+                      const val = e.target.value.toUpperCase();
+                      if (val.startsWith('D') || val.includes('MASUK') || val.includes('DEB')) {
+                        handleCellChange(idx, 'jenis', 'DEBIT');
+                      } else {
+                        handleCellChange(idx, 'jenis', 'KREDIT');
+                      }
+                    }}
+                    onKeyDown={e => handleKeyDown(e, idx, 'jenis')}
+                    onPaste={e => handlePaste(e, idx, 'jenis')}
+                  />
                 </td>
                 <td>
                   <input 
                     type="date" 
                     className="excel-input" 
                     value={row.tanggal} 
+                    data-row={idx}
+                    data-col="tanggal"
                     onChange={e => handleCellChange(idx, 'tanggal', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'tanggal')}
+                    onPaste={e => handlePaste(e, idx, 'tanggal')}
                   />
                 </td>
                 <td>
@@ -162,7 +271,11 @@ export default function TransaksiForm({ onSuccess }) {
                     className="excel-input" 
                     placeholder="Contoh: Beli ATK" 
                     value={row.keterangan} 
+                    data-row={idx}
+                    data-col="keterangan"
                     onChange={e => handleCellChange(idx, 'keterangan', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'keterangan')}
+                    onPaste={e => handlePaste(e, idx, 'keterangan')}
                   />
                 </td>
                 <td>
@@ -172,7 +285,11 @@ export default function TransaksiForm({ onSuccess }) {
                     placeholder="Nominal" 
                     min="0"
                     value={row.jumlah} 
+                    data-row={idx}
+                    data-col="jumlah"
                     onChange={e => handleCellChange(idx, 'jumlah', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'jumlah')}
+                    onPaste={e => handlePaste(e, idx, 'jumlah')}
                   />
                 </td>
                 <td>
@@ -181,7 +298,11 @@ export default function TransaksiForm({ onSuccess }) {
                     className="excel-input" 
                     placeholder="PIC" 
                     value={row.pic} 
+                    data-row={idx}
+                    data-col="pic"
                     onChange={e => handleCellChange(idx, 'pic', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'pic')}
+                    onPaste={e => handlePaste(e, idx, 'pic')}
                   />
                 </td>
                 <td>
@@ -190,7 +311,11 @@ export default function TransaksiForm({ onSuccess }) {
                     className="excel-input" 
                     placeholder="No. ID" 
                     value={row.no_id} 
+                    data-row={idx}
+                    data-col="no_id"
                     onChange={e => handleCellChange(idx, 'no_id', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'no_id')}
+                    onPaste={e => handlePaste(e, idx, 'no_id')}
                   />
                 </td>
                 <td>
@@ -198,7 +323,11 @@ export default function TransaksiForm({ onSuccess }) {
                     type="date" 
                     className="excel-input" 
                     value={row.tgl_nota} 
+                    data-row={idx}
+                    data-col="tgl_nota"
                     onChange={e => handleCellChange(idx, 'tgl_nota', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'tgl_nota')}
+                    onPaste={e => handlePaste(e, idx, 'tgl_nota')}
                   />
                 </td>
                 <td style={{ textAlign: 'center', padding: 0 }}>

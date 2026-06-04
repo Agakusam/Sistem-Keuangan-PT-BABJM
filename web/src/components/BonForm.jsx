@@ -35,6 +35,82 @@ export default function BonForm({ onSuccess }) {
     }));
   };
 
+  const handleKeyDown = (e, rowIndex, field) => {
+    // Enter / ArrowDown / ArrowUp navigation
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const nextInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="${field}"]`);
+      if (nextInput) {
+        nextInput.focus();
+        if (nextInput.select) nextInput.select();
+      }
+    } else if (e.key === 'ArrowDown') {
+      const nextInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="${field}"]`);
+      if (nextInput) {
+        nextInput.focus();
+        if (nextInput.select) nextInput.select();
+      }
+    } else if (e.key === 'ArrowUp' && rowIndex > 0) {
+      const prevInput = document.querySelector(`[data-row="${rowIndex - 1}"][data-col="${field}"]`);
+      if (prevInput) {
+        prevInput.focus();
+        if (prevInput.select) prevInput.select();
+      }
+    }
+    
+    // Ctrl + D: Copy value from the cell above (Fill Down)
+    if (e.ctrlKey && e.key === 'd') {
+      e.preventDefault();
+      if (rowIndex > 0) {
+        setRows(prevRows => {
+          const newRows = prevRows.map(r => ({ ...r }));
+          newRows[rowIndex][field] = newRows[rowIndex - 1][field];
+          return newRows;
+        });
+      }
+    }
+  };
+
+  const handlePaste = (e, rowIndex, colKey) => {
+    const clipboardData = e.clipboardData || window.clipboardData;
+    const pastedText = clipboardData.getData('text');
+    
+    if (pastedText.includes('\t') || pastedText.includes('\n')) {
+      e.preventDefault();
+      
+      const rowsData = pastedText.split(/\r?\n/).map(row => row.split('\t'));
+      const colOrder = ['tanggal', 'pic', 'keterangan', 'jumlah'];
+      const startColIndex = colOrder.indexOf(colKey);
+      
+      if (startColIndex === -1) return;
+      
+      setRows(prevRows => {
+        const newRows = prevRows.map(r => ({ ...r }));
+        
+        rowsData.forEach((rowCells, rOffset) => {
+          const targetRowIndex = rowIndex + rOffset;
+          if (targetRowIndex < newRows.length) {
+            rowCells.forEach((cellValue, cOffset) => {
+              const targetColIndex = startColIndex + cOffset;
+              if (targetColIndex < colOrder.length) {
+                const colName = colOrder[targetColIndex];
+                let cleanVal = cellValue.trim();
+                
+                if (colName === 'jumlah') {
+                  cleanVal = cleanVal.replace(/[^0-9.-]/g, '');
+                }
+                
+                newRows[targetRowIndex][colName] = cleanVal;
+              }
+            });
+          }
+        });
+        
+        return newRows;
+      });
+    }
+  };
+
   const handleAddTenRows = () => {
     setRows(prev => [...prev, ...Array.from({ length: 10 }, () => createEmptyRow())]);
   };
@@ -100,6 +176,11 @@ export default function BonForm({ onSuccess }) {
         </button>
       </div>
 
+      {/* Summary Totals for Bulk Entry */}
+      <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', background: 'rgba(16, 124, 65, 0.05)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 124, 65, 0.2)', fontSize: '0.85rem', fontWeight: 600 }}>
+        <div>Total Nominal Bon: <span style={{ color: 'var(--primary)' }}>{formatRp(rows.reduce((sum, r) => sum + (parseFloat(r.jumlah) || 0), 0))}</span></div>
+      </div>
+
       <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '1rem' }}>
         * Ketik langsung pada sel tabel untuk mengedit data seperti di Excel. Baris kosong tidak akan disimpan.
       </p>
@@ -128,7 +209,11 @@ export default function BonForm({ onSuccess }) {
                     type="date" 
                     className="excel-input" 
                     value={row.tanggal} 
+                    data-row={idx}
+                    data-col="tanggal"
                     onChange={e => handleCellChange(idx, 'tanggal', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'tanggal')}
+                    onPaste={e => handlePaste(e, idx, 'tanggal')}
                   />
                 </td>
                 <td>
@@ -137,7 +222,11 @@ export default function BonForm({ onSuccess }) {
                     className="excel-input" 
                     placeholder="Nama penerima bon" 
                     value={row.pic} 
+                    data-row={idx}
+                    data-col="pic"
                     onChange={e => handleCellChange(idx, 'pic', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'pic')}
+                    onPaste={e => handlePaste(e, idx, 'pic')}
                   />
                 </td>
                 <td>
@@ -146,7 +235,11 @@ export default function BonForm({ onSuccess }) {
                     className="excel-input" 
                     placeholder="Contoh: Belanja bahan ATK" 
                     value={row.keterangan} 
+                    data-row={idx}
+                    data-col="keterangan"
                     onChange={e => handleCellChange(idx, 'keterangan', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'keterangan')}
+                    onPaste={e => handlePaste(e, idx, 'keterangan')}
                   />
                 </td>
                 <td>
@@ -156,7 +249,11 @@ export default function BonForm({ onSuccess }) {
                     placeholder="Nominal" 
                     min="0"
                     value={row.jumlah} 
+                    data-row={idx}
+                    data-col="jumlah"
                     onChange={e => handleCellChange(idx, 'jumlah', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'jumlah')}
+                    onPaste={e => handlePaste(e, idx, 'jumlah')}
                   />
                 </td>
                 <td style={{ textAlign: 'center', padding: 0 }}>
@@ -172,16 +269,7 @@ export default function BonForm({ onSuccess }) {
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr style={{ fontWeight: 'bold', backgroundColor: 'rgba(99, 102, 241, 0.05)' }}>
-              <td className="excel-row-num">Σ</td>
-              <td colSpan="3" style={{ textAlign: 'right', paddingRight: '1rem', borderRight: 'none' }}>Total Nominal:</td>
-              <td style={{ textAlign: 'right', color: 'var(--primary)', borderLeft: 'none' }}>
-                {formatRp(rows.reduce((sum, r) => sum + (parseFloat(r.jumlah) || 0), 0))}
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
+          {/* Footer removed, totals displayed at the top */}
         </table>
       </div>
 
