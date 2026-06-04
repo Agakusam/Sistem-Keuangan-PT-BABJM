@@ -36,6 +36,9 @@ export default function BonForm({ onSuccess }) {
   };
 
   const handleKeyDown = (e, rowIndex, field) => {
+    const colOrder = ['tanggal', 'pic', 'keterangan', 'jumlah'];
+    const currentColIndex = colOrder.indexOf(field);
+
     // Enter / ArrowDown / ArrowUp navigation
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -55,6 +58,28 @@ export default function BonForm({ onSuccess }) {
       if (prevInput) {
         prevInput.focus();
         if (prevInput.select) prevInput.select();
+      }
+    } else if (e.key === 'ArrowRight') {
+      const target = e.target;
+      const isAtEnd = target.selectionEnd === null || target.selectionEnd === target.value.length;
+      if (isAtEnd && currentColIndex < colOrder.length - 1) {
+        const nextCol = colOrder[currentColIndex + 1];
+        const nextInput = document.querySelector(`[data-row="${rowIndex}"][data-col="${nextCol}"]`);
+        if (nextInput) {
+          nextInput.focus();
+          if (nextInput.select) nextInput.select();
+        }
+      }
+    } else if (e.key === 'ArrowLeft') {
+      const target = e.target;
+      const isAtStart = target.selectionStart === null || target.selectionStart === 0;
+      if (isAtStart && currentColIndex > 0) {
+        const prevCol = colOrder[currentColIndex - 1];
+        const prevInput = document.querySelector(`[data-row="${rowIndex}"][data-col="${prevCol}"]`);
+        if (prevInput) {
+          prevInput.focus();
+          if (prevInput.select) prevInput.select();
+        }
       }
     }
     
