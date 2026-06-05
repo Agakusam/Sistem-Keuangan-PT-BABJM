@@ -36,12 +36,12 @@ function handleTelegramMessage(message) {
 
   var textLower = text.toLowerCase();
   var isCommandButton = (
-    textLower === '🟢 kas masuk' || textLower === 'kas masuk' ||
-    textLower === '🔴 kas keluar' || textLower === 'kas keluar' ||
-    textLower === '📋 catat bon' || textLower === 'catat bon' ||
-    textLower === '🔍 pantau bon' || textLower === 'pantau bon' ||
-    textLower === '💳 cek saldo' || textLower === 'cek saldo' ||
-    textLower === '📊 rekap' || textLower === 'rekap'
+    textLower.includes('kas masuk') ||
+    textLower.includes('kas keluar') ||
+    textLower.includes('quick bon') ||
+    textLower.includes('monitor bon') ||
+    textLower.includes('cek saldo') ||
+    textLower.includes('rekap transaksi')
   );
 
   // Cek state (apakah sedang dalam flow guided input)
@@ -56,29 +56,41 @@ function handleTelegramMessage(message) {
   }
 
   // Pre-process button commands
-  if (textLower === '🟢 kas masuk' || textLower === 'kas masuk') {
-    setState(chatId, { flow: 'kas', step: 'deskripsi', jenis: 'DEBIT' });
-    sendTelegramMessage(chatId, '🟢 <b>KAS MASUK (DEBIT)</b>\n\n📝 Ketik <b>deskripsi</b> transaksi:');
+  if (textLower.includes('kas masuk')) {
+    var msg = '🟢 <b>Quick Input Kas Masuk</b>\n\n'
+      + 'Salin format berikut, ubah nominal dan keterangan, lalu kirim:\n\n'
+      + '<code>/kas +[nominal] [keterangan]</code>\n\n'
+      + 'Contoh (ketuk untuk menyalin):\n'
+      + '<code>/kas +1000000 Pengisian saldo kas kecil</code>';
+    sendTelegramMessage(chatId, msg);
     return;
   }
-  if (textLower === '🔴 kas keluar' || textLower === 'kas keluar') {
-    setState(chatId, { flow: 'kas', step: 'deskripsi', jenis: 'KREDIT' });
-    sendTelegramMessage(chatId, '🔴 <b>KAS KELUAR (KREDIT)</b>\n\n📝 Ketik <b>deskripsi</b> transaksi:');
+  if (textLower.includes('kas keluar')) {
+    var msg = '🔴 <b>Quick Input Kas Keluar</b>\n\n'
+      + 'Salin format berikut, ubah nominal dan keterangan, lalu kirim:\n\n'
+      + '<code>/kas -[nominal] [keterangan]</code>\n\n'
+      + 'Contoh (ketuk untuk menyalin):\n'
+      + '<code>/kas -50000 Beli ATK dan fotokopi</code>';
+    sendTelegramMessage(chatId, msg);
     return;
   }
-  if (textLower === '📋 catat bon' || textLower === 'catat bon') {
-    setState(chatId, { flow: 'bon', step: 'deskripsi' });
-    sendTelegramMessage(chatId, '📋 <b>Pencatatan Bon Baru</b>\n\n📝 Ketik <b>deskripsi/keterangan</b> bon:');
+  if (textLower.includes('quick bon')) {
+    var msg = '📋 <b>Quick Input Bon Baru</b>\n\n'
+      + 'Salin format berikut, ubah PIC, nominal, dan keterangan, lalu kirim:\n\n'
+      + '<code>/bon [PIC] [nominal] [keterangan]</code>\n\n'
+      + 'Contoh (ketuk untuk menyalin):\n'
+      + '<code>/bon Fita 500000 Belanja konsumsi rapat</code>';
+    sendTelegramMessage(chatId, msg);
     return;
   }
-  if (textLower === '🔍 pantau bon' || textLower === 'pantau bon') {
+  if (textLower.includes('monitor bon')) {
     return handleMonitor(chatId);
   }
-  if (textLower === '💳 cek saldo' || textLower === 'cek saldo') {
+  if (textLower.includes('cek saldo')) {
     return handleSaldo(chatId);
   }
-  if (textLower === '📊 rekap' || textLower === 'rekap') {
-    return handleRekap(chatId, '/rekap');
+  if (textLower.includes('rekap transaksi')) {
+    return handleRekapStart(chatId);
   }
 
   // Command routing
@@ -357,6 +369,9 @@ function handleSaldo(chatId) {
 
 function handleRekap(chatId, text) {
   var parts = text.trim().split(/\s+/);
+  if (parts.length < 2) {
+    return handleRekapStart(chatId);
+  }
   var params = {};
 
   // /rekap mei atau /rekap 5 2026
@@ -527,6 +542,52 @@ function handleStateInput(chatId, text, state, username) {
         _showBonConfirmation(chatId, state);
         break;
     }
+  } else if (state.flow === 'rekap') {
+    switch (state.step) {
+      case 'tanggal_awal':
+        var dateVal = parseDate(text);
+        if (!dateVal) {
+          sendTelegramMessage(chatId, '❌ Format tanggal awal tidak valid. Coba lagi (Format: YYYY-MM-DD):\nContoh: <code>2026-05-01</code>');
+          return;
+        }
+        state.tanggal_awal = formatDateISO(dateVal);
+        state.step = 'tanggal_akhir';
+        setState(chatId, state);
+        sendTelegramMessage(chatId, '📊 Rekap: ' + state.tanggal_awal + ' s.d. ...\n\n📅 Ketik <b>Tanggal Akhir</b> (Format: <code>YYYY-MM-DD</code>):\nContoh: <code>2026-05-31</code>');
+        break;
+
+      case 'tanggal_akhir':
+        var dateValEnd = parseDate(text);
+        if (!dateValEnd) {
+          sendTelegramMessage(chatId, '❌ Format tanggal akhir tidak valid. Coba lagi (Format: YYYY-MM-DD):\nContoh: <code>2026-05-31</code>');
+          return;
+        }
+        var start = parseDate(state.tanggal_awal);
+        if (dateValEnd < start) {
+          sendTelegramMessage(chatId, '❌ Tanggal akhir tidak boleh mendahului tanggal awal. Coba lagi (Format: YYYY-MM-DD):');
+          return;
+        }
+        var tglAkhir = formatDateISO(dateValEnd);
+        
+        // Execute rekap
+        var result = rekapCash({ dari: state.tanggal_awal, sampai: tglAkhir });
+        if (result.success) {
+          var d = result.data;
+          sendTelegramMessage(chatId,
+            '📊 <b>REKAP TRANSAKSI</b>\n\n'
+            + '📅 ' + d.periode + '\n'
+            + '📝 ' + d.total_transaksi + ' transaksi\n\n'
+            + '🟢 Debit (Masuk): ' + d.total_debit_formatted + '\n'
+            + '🔴 Kredit (Keluar): ' + d.total_kredit_formatted + '\n'
+            + '📈 Netto: ' + d.netto_formatted + '\n\n'
+            + '💳 Saldo saat ini: ' + d.saldo_formatted
+          );
+        } else {
+          sendTelegramMessage(chatId, '❌ Gagal rekap: ' + result.error);
+        }
+        clearState(chatId);
+        break;
+    }
   }
 }
 
@@ -623,5 +684,10 @@ function _executeBonTransaction(chatId, state, username) {
   } else {
     sendTelegramMessage(chatId, '❌ Gagal: ' + result.error);
   }
+}
+
+function handleRekapStart(chatId) {
+  setState(chatId, { flow: 'rekap', step: 'tanggal_awal' });
+  sendTelegramMessage(chatId, '📊 <b>Rekap Transaksi Kas</b>\n\n📅 Ketik <b>Tanggal Awal</b> (Format: <code>YYYY-MM-DD</code>):\nContoh: <code>2026-05-01</code>');
 }
 

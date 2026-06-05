@@ -17,14 +17,14 @@ function getDefaultKeyboard() {
   return {
     keyboard: [
       [
-        { text: '🟢 Kas Masuk' },
-        { text: '🔴 Kas Keluar' },
-        { text: '📋 Catat Bon' }
+        { text: '🟢 Quick Kas Masuk' },
+        { text: '🔴 Quick Kas Keluar' },
+        { text: '📋 Quick Bon' }
       ],
       [
-        { text: '🔍 Pantau Bon' },
+        { text: '🔍 Monitor Bon' },
         { text: '💳 Cek Saldo' },
-        { text: '📊 Rekap' }
+        { text: '📊 Rekap Transaksi' }
       ]
     ],
     resize_keyboard: true,
