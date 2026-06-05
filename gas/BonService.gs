@@ -115,6 +115,7 @@ function listBons(params) {
   // Clean
   var cleaned = rows.map(function (b) {
     return {
+      _row: b._row,
       id_bon: b.id_bon,
       tanggal: b.tanggal,
       pic: b.pic,
@@ -195,4 +196,171 @@ function rekapBons() {
     nominal_lunas: totalLunas,
     nominal_lunas_formatted: formatRupiahSpaced(totalLunas)
   });
+}
+
+/**
+ * Update multiple bon logs in bulk (Excel Grid Mode Edit)
+ * @param {Object} body {bons: [{_row, pic, keterangan, jumlah, tanggal?, status}]}
+ */
+function editBonsBulk(body) {
+  var list = body.bons || [];
+  if (list.length === 0) {
+    return errorResponse('Tidak ada data bon untuk diedit');
+  }
+
+  var sheet = getBonSheet();
+  var lastRow = sheet.getLastRow();
+  var cashSheet = getCashSheet();
+  
+  var minUpdatedCashRow = Infinity;
+
+  for (var i = 0; i < list.length; i++) {
+    var item = list[i];
+    var row = parseInt(item._row);
+    if (isNaN(row) || row < 2 || row > lastRow) {
+      return errorResponse('Baris bon tidak valid: ' + item._row);
+    }
+
+    var amount = parseAmount(item.jumlah);
+    if (amount <= 0) return errorResponse('Nominal harus lebih dari 0 pada baris ' + row);
+
+    var pic = String(item.pic).trim();
+    var keterangan = String(item.keterangan).trim();
+    var nominal = formatRupiah(amount);
+    var tanggal = item.tanggal ? parseDate(item.tanggal) || new Date() : new Date();
+    var newStatus = String(item.status || 'BELUM').trim().toUpperCase();
+
+    // Get old details to know ID and old status
+    var currentId = String(sheet.getRange(row, BON_COLS.ID_BON).getValue()).trim();
+    var oldStatus = String(sheet.getRange(row, BON_COLS.STATUS).getValue()).trim().toUpperCase();
+
+    if (!currentId) continue;
+
+    // Update Bon_log row
+    sheet.getRange(row, BON_COLS.TANGGAL).setValue(tanggal);
+    sheet.getRange(row, BON_COLS.PIC).setValue(pic);
+    sheet.getRange(row, BON_COLS.KETERANGAN).setValue(keterangan);
+    sheet.getRange(row, BON_COLS.NOMINAL).setValue(nominal);
+    sheet.getRange(row, BON_COLS.STATUS).setValue(newStatus);
+
+    // Sync with Cash_log
+    var cashRows = readCashRows();
+
+    // Status transitions
+    if (oldStatus === 'BELUM' && newStatus === 'SUDAH') {
+      var addRes = addCashTransaction({
+        keterangan: 'Pertanggungan Bon - ' + pic + ' - ' + keterangan,
+        jumlah: amount,
+        jenis: 'DEBIT',
+        pic: pic,
+        no_id: currentId,
+        sumber: 'WEB_EDIT'
+      });
+      if (addRes.success && addRes.data && addRes.data.row) {
+        if (addRes.data.row < minUpdatedCashRow) minUpdatedCashRow = addRes.data.row;
+      }
+    } else if (oldStatus === 'SUDAH' && newStatus === 'BELUM') {
+      // Delete DEBIT transaction
+      for (var j = cashRows.length - 1; j >= 0; j--) {
+        var cRow = cashRows[j];
+        if (String(cRow.no_id).trim().toUpperCase() === currentId.toUpperCase() && parseRupiah(cRow.debit) > 0) {
+          cashSheet.deleteRow(cRow._row);
+          if (cRow._row < minUpdatedCashRow) minUpdatedCashRow = cRow._row;
+        }
+      }
+    }
+
+    // Refresh cash rows
+    cashRows = readCashRows();
+
+    // Update matching transactions in Cash_log (KREDIT and DEBIT)
+    for (var k = 0; k < cashRows.length; k++) {
+      var cRow = cashRows[k];
+      if (String(cRow.no_id).trim().toUpperCase() === currentId.toUpperCase()) {
+        var isKredit = parseRupiah(cRow.kredit) > 0;
+        var isDebit = parseRupiah(cRow.debit) > 0;
+
+        if (isKredit) {
+          cashSheet.getRange(cRow._row, CASH_COLS.TANGGAL).setValue(tanggal);
+          cashSheet.getRange(cRow._row, CASH_COLS.PIC).setValue(pic);
+          cashSheet.getRange(cRow._row, CASH_COLS.KETERANGAN_KREDIT).setValue('Bon - ' + pic + ' - ' + keterangan);
+          cashSheet.getRange(cRow._row, CASH_COLS.KREDIT).setValue(nominal);
+          if (cRow._row < minUpdatedCashRow) minUpdatedCashRow = cRow._row;
+        } else if (isDebit) {
+          cashSheet.getRange(cRow._row, CASH_COLS.PIC).setValue(pic);
+          cashSheet.getRange(cRow._row, CASH_COLS.KETERANGAN_DEBIT).setValue('Pertanggungan Bon - ' + pic + ' - ' + keterangan);
+          cashSheet.getRange(cRow._row, CASH_COLS.DEBIT).setValue(nominal);
+          if (cRow._row < minUpdatedCashRow) minUpdatedCashRow = cRow._row;
+        }
+      }
+    }
+  }
+
+  // Recalculate Cash_log balances if matches were updated
+  if (minUpdatedCashRow !== Infinity) {
+    var cashLastRow = cashSheet.getLastRow();
+    if (minUpdatedCashRow <= cashLastRow) {
+      _recalculateCashBalances(cashSheet, minUpdatedCashRow);
+    }
+  }
+
+  return successResponse(null, 'Berhasil memperbarui ' + list.length + ' data bon');
+}
+
+/**
+ * Hapus bon berdasarkan baris-baris (cascading delete ke Cash_log)
+ * @param {Object} body {rows: [number]}
+ */
+function deleteBons(body) {
+  var rowsToDelete = body.rows || [];
+  if (rowsToDelete.length === 0) {
+    return errorResponse('Tidak ada baris bon untuk dihapus');
+  }
+
+  // Sort descending to prevent index shifting
+  rowsToDelete = rowsToDelete.map(Number).filter(function(r) {
+    return !isNaN(r) && r >= 2;
+  }).sort(function(a, b) {
+    return b - a;
+  });
+
+  if (rowsToDelete.length === 0) {
+    return errorResponse('Baris bon tidak valid untuk dihapus');
+  }
+
+  var sheet = getBonSheet();
+  var cashSheet = getCashSheet();
+  var minCashRow = Infinity;
+
+  for (var i = 0; i < rowsToDelete.length; i++) {
+    var r = rowsToDelete[i];
+    var currentId = String(sheet.getRange(r, BON_COLS.ID_BON).getValue()).trim();
+
+    // Delete Bon row
+    sheet.deleteRow(r);
+
+    if (currentId) {
+      // Find and delete matching transactions in Cash_log
+      var cashRows = readCashRows();
+      for (var j = cashRows.length - 1; j >= 0; j--) {
+        var cRow = cashRows[j];
+        if (String(cRow.no_id).trim().toUpperCase() === currentId.toUpperCase()) {
+          cashSheet.deleteRow(cRow._row);
+          if (cRow._row < minCashRow) {
+            minCashRow = cRow._row;
+          }
+        }
+      }
+    }
+  }
+
+  // Recalculate Cash_log balances if any cash rows were deleted
+  if (minCashRow !== Infinity) {
+    var lastRow = cashSheet.getLastRow();
+    if (minCashRow <= lastRow) {
+      _recalculateCashBalances(cashSheet, minCashRow);
+    }
+  }
+
+  return successResponse(null, 'Berhasil menghapus ' + rowsToDelete.length + ' bon beserta transaksi kas terkait');
 }

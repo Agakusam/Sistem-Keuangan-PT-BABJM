@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react';
 import { fetchFromGas, postToGas } from '@/lib/api';
 import BonForm from '@/components/BonForm';
-import { Plus, Search, AlertCircle, CheckCircle2, Filter, Download, FileText } from 'lucide-react';
+import EditBonGridModal from '@/components/EditBonGridModal';
+import { Plus, Search, AlertCircle, CheckCircle2, Filter, Download, FileText, Edit2, Trash2 } from 'lucide-react';
 
 export default function BonPage() {
   const [bons, setBons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedBons, setSelectedBons] = useState(new Set());
+  const [showEditModal, setShowEditModal] = useState(false);
   
   // Independent searches
   const [searchTermOutstanding, setSearchTermOutstanding] = useState('');
@@ -77,6 +80,7 @@ export default function BonPage() {
       const res = await fetchFromGas('listBon');
       if (res.success) {
         setBons(res.data.data.reverse()); // Show newest first
+        setSelectedBons(new Set()); // Reset selection
       }
     } catch (err) {
       console.error(err);
@@ -88,6 +92,26 @@ export default function BonPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleDeleteSelected = async () => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedBons.size} bon terpilih? Tindakan ini akan menghapus bon dari Bon_log, menghapus transaksi Kas terkait di Cash_log, dan menghitung ulang saldo kas.`)) return;
+    
+    setLoading(true);
+    try {
+      const res = await postToGas('deleteBon', { rows: Array.from(selectedBons) });
+      if (res.success) {
+        alert(res.message || 'Bon terpilih berhasil dihapus!');
+        setSelectedBons(new Set());
+        loadData();
+      } else {
+        alert(`Gagal menghapus: ${res.error}`);
+      }
+    } catch (err) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSettle = async (id_bon) => {
     if (!confirm(`Selesaikan pertanggungan bon ${id_bon}?`)) return;
@@ -483,6 +507,23 @@ export default function BonPage() {
               <thead>
                 <tr>
                   <th style={{ width: '35px' }}>No.</th>
+                  <th style={{ width: '40px' }} className="no-print">
+                    <input 
+                      type="checkbox"
+                      checked={filteredOutstanding.length > 0 && filteredOutstanding.every(b => selectedBons.has(b._row))}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedBons);
+                        filteredOutstanding.forEach(b => {
+                          if (e.target.checked) {
+                            newSelected.add(b._row);
+                          } else {
+                            newSelected.delete(b._row);
+                          }
+                        });
+                        setSelectedBons(newSelected);
+                      }}
+                    />
+                  </th>
                   {renderHeaderWithFilter('ID Bon', 'id_bon', 'outstanding')}
                   {renderHeaderWithFilter('Tanggal', 'tanggal', 'outstanding')}
                   {renderHeaderWithFilter('PIC', 'pic', 'outstanding')}
@@ -494,8 +535,23 @@ export default function BonPage() {
               </thead>
               <tbody>
                 {filteredOutstanding.length > 0 ? filteredOutstanding.map((b, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} style={{ background: selectedBons.has(b._row) ? 'rgba(16, 124, 65, 0.08)' : '' }}>
                     <td className="excel-row-num">{idx + 1}</td>
+                    <td className="no-print" style={{ textAlign: 'center' }}>
+                      <input 
+                        type="checkbox"
+                        checked={selectedBons.has(b._row)}
+                        onChange={(e) => {
+                          const newSelected = new Set(selectedBons);
+                          if (e.target.checked) {
+                            newSelected.add(b._row);
+                          } else {
+                            newSelected.delete(b._row);
+                          }
+                          setSelectedBons(newSelected);
+                        }}
+                      />
+                    </td>
                     <td style={{ fontWeight: 600 }}>{b.id_bon}</td>
                     <td>{formatDate(b.tanggal)}</td>
                     <td>{b.pic}</td>
@@ -522,7 +578,7 @@ export default function BonPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data bon outstanding</td>
+                    <td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data bon outstanding</td>
                   </tr>
                 )}
               </tbody>
@@ -562,6 +618,23 @@ export default function BonPage() {
               <thead>
                 <tr>
                   <th style={{ width: '35px' }}>No.</th>
+                  <th style={{ width: '40px' }} className="no-print">
+                    <input 
+                      type="checkbox"
+                      checked={filteredSettled.length > 0 && filteredSettled.every(b => selectedBons.has(b._row))}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedBons);
+                        filteredSettled.forEach(b => {
+                          if (e.target.checked) {
+                            newSelected.add(b._row);
+                          } else {
+                            newSelected.delete(b._row);
+                          }
+                        });
+                        setSelectedBons(newSelected);
+                      }}
+                    />
+                  </th>
                   {renderHeaderWithFilter('ID Bon', 'id_bon', 'settled')}
                   {renderHeaderWithFilter('Tanggal', 'tanggal', 'settled')}
                   {renderHeaderWithFilter('PIC', 'pic', 'settled')}
@@ -572,8 +645,23 @@ export default function BonPage() {
               </thead>
               <tbody>
                 {filteredSettled.length > 0 ? filteredSettled.map((b, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} style={{ background: selectedBons.has(b._row) ? 'rgba(16, 124, 65, 0.08)' : '' }}>
                     <td className="excel-row-num">{idx + 1}</td>
+                    <td className="no-print" style={{ textAlign: 'center' }}>
+                      <input 
+                        type="checkbox"
+                        checked={selectedBons.has(b._row)}
+                        onChange={(e) => {
+                          const newSelected = new Set(selectedBons);
+                          if (e.target.checked) {
+                            newSelected.add(b._row);
+                          } else {
+                            newSelected.delete(b._row);
+                          }
+                          setSelectedBons(newSelected);
+                        }}
+                      />
+                    </td>
                     <td style={{ fontWeight: 600 }}>{b.id_bon}</td>
                     <td>{formatDate(b.tanggal)}</td>
                     <td>{b.pic}</td>
@@ -585,7 +673,7 @@ export default function BonPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data bon lunas</td>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data bon lunas</td>
                   </tr>
                 )}
               </tbody>
@@ -605,6 +693,54 @@ export default function BonPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Action Bar */}
+      {selectedBons.size > 0 && (
+        <div className="floating-action-bar no-print" style={{
+          position: 'fixed',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255, 255, 255, 0.95)',
+          border: '1px solid var(--border)',
+          padding: '0.75rem 1.5rem',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1.5rem',
+          zIndex: 1000
+        }}>
+          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>{selectedBons.size} bon terpilih</span>
+          <div style={{ borderLeft: '1px solid var(--border)', height: '20px' }}></div>
+          <button 
+            type="button"
+            className="btn btn-primary" 
+            style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', backgroundColor: 'var(--primary)' }}
+            onClick={() => setShowEditModal(true)}
+          >
+            <Edit2 size={14} /> Edit Grid Mode
+          </button>
+          <button 
+            type="button"
+            className="btn" 
+            style={{ color: 'var(--danger)', border: '1px solid var(--danger)', padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', background: 'transparent' }}
+            onClick={handleDeleteSelected}
+          >
+            <Trash2 size={14} /> Hapus Terpilih
+          </button>
+        </div>
+      )}
+
+      <EditBonGridModal 
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        selectedBons={bons.filter(b => selectedBons.has(b._row))}
+        onSuccess={() => {
+          setSelectedBons(new Set());
+          loadData();
+        }}
+      />
     </div>
   );
 }

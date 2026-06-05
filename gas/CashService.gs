@@ -101,6 +101,7 @@ function listCashTransactions(params) {
     for (var k in r) {
       if (k.charAt(0) !== '_') copy[k] = r[k];
     }
+    copy._row = r._row; // Expose row index for editing!
     // Parse amounts for JSON
     copy.debit_value = parseRupiah(r.debit);
     copy.kredit_value = parseRupiah(r.kredit);
@@ -329,4 +330,150 @@ function getDashboardData() {
     },
     recent_transactions: recentCleaned
   });
+}
+
+/**
+ * Update multiple cash transactions in bulk (Excel Grid Mode Edit)
+ * @param {Object} body {transactions: [{_row, jenis, tanggal, keterangan, jumlah, pic, no_id, tgl_nota, tgl_penagihan, lampiran, akun}]}
+ */
+function editCashTransactionsBulk(body) {
+  var list = body.transactions || [];
+  if (list.length === 0) {
+    return errorResponse('Tidak ada data transaksi untuk diedit');
+  }
+
+  var sheet = getCashSheet();
+  var lastRow = sheet.getLastRow();
+  var minRow = Infinity;
+
+  for (var i = 0; i < list.length; i++) {
+    var trx = list[i];
+    var row = parseInt(trx._row);
+    if (isNaN(row) || row < 7 || row > lastRow) {
+      return errorResponse('Baris transaksi tidak valid: ' + trx._row);
+    }
+
+    var amount = parseAmount(trx.jumlah);
+    if (amount <= 0) {
+      return errorResponse('Nominal harus lebih dari 0 pada baris ' + row);
+    }
+
+    var jenis = String(trx.jenis).toUpperCase();
+    if (jenis !== 'DEBIT' && jenis !== 'KREDIT') {
+      return errorResponse('Jenis harus DEBIT atau KREDIT pada baris ' + row);
+    }
+
+    var tanggal = trx.tanggal ? parseDate(trx.tanggal) || new Date() : new Date();
+
+    // Format fields
+    var debit = jenis === 'DEBIT' ? formatRupiah(amount) : 'Rp -';
+    var kredit = jenis === 'KREDIT' ? formatRupiah(amount) : '';
+    var ketDebit = jenis === 'DEBIT' ? String(trx.keterangan).trim() : '';
+    var ketKredit = jenis === 'KREDIT' ? String(trx.keterangan).trim() : '';
+
+    // Write fields to sheet row (Columns A to I)
+    sheet.getRange(row, 1, 1, 9).setValues([[
+      tanggal,
+      trx.tgl_nota || '',
+      trx.akun || '',
+      ketDebit,
+      ketKredit,
+      trx.pic || '',
+      trx.no_id || '',
+      debit,
+      kredit
+    ]]);
+
+    // Columns K to L (tgl_penagihan, lampiran)
+    sheet.getRange(row, 11, 1, 2).setValues([[
+      trx.tgl_penagihan || '',
+      trx.lampiran || ''
+    ]]);
+
+    if (row < minRow) {
+      minRow = row;
+    }
+  }
+
+  // Recalculate balances starting from the earliest modified row
+  if (minRow !== Infinity) {
+    _recalculateCashBalances(sheet, minRow);
+  }
+
+  return successResponse(null, 'Berhasil memperbarui ' + list.length + ' transaksi kas');
+}
+
+/**
+ * Hapus transaksi kas berdasarkan baris-baris
+ * @param {Object} body {rows: [number]}
+ */
+function deleteCashTransactions(body) {
+  var rowsToDelete = body.rows || [];
+  if (rowsToDelete.length === 0) {
+    return errorResponse('Tidak ada baris transaksi untuk dihapus');
+  }
+
+  // Sort descending to avoid index shifting when deleting
+  rowsToDelete = rowsToDelete.map(Number).filter(function(r) {
+    return !isNaN(r) && r >= 7;
+  }).sort(function(a, b) {
+    return b - a;
+  });
+
+  if (rowsToDelete.length === 0) {
+    return errorResponse('Baris transaksi tidak valid untuk dihapus');
+  }
+
+  var sheet = getCashSheet();
+  var minRow = Infinity;
+
+  for (var i = 0; i < rowsToDelete.length; i++) {
+    var r = rowsToDelete[i];
+    sheet.deleteRow(r);
+    if (r < minRow) {
+      minRow = r;
+    }
+  }
+
+  // Recalculate balances starting from the row that shifted up
+  if (minRow !== Infinity) {
+    var lastRow = sheet.getLastRow();
+    if (minRow <= lastRow) {
+      _recalculateCashBalances(sheet, minRow);
+    }
+  }
+
+  return successResponse(null, 'Berhasil menghapus ' + rowsToDelete.length + ' transaksi kas');
+}
+
+/**
+ * Rekalkulasi saldo akhir dari startRow ke baris terakhir
+ */
+function _recalculateCashBalances(sheet, startRow) {
+  var lastRow = sheet.getLastRow();
+  if (startRow > lastRow) return;
+
+  var prevSaldo = 0;
+  if (startRow > 6) {
+    prevSaldo = parseRupiah(sheet.getRange(startRow - 1, CASH_COLS.SALDO_AKHIR).getValue());
+  } else {
+    prevSaldo = parseRupiah(sheet.getRange(6, CASH_COLS.SALDO_AKHIR).getValue());
+    startRow = 7;
+  }
+
+  var numRows = lastRow - startRow + 1;
+  if (numRows <= 0) return;
+
+  var range = sheet.getRange(startRow, 8, numRows, 3); // Col 8, 9, 10 (Debit, Kredit, Saldo Akhir)
+  var values = range.getValues();
+
+  var runningSaldo = prevSaldo;
+  for (var i = 0; i < values.length; i++) {
+    var debVal = parseRupiah(values[i][0]);
+    var kreVal = parseRupiah(values[i][1]);
+    runningSaldo = runningSaldo + debVal - kreVal;
+    values[i][2] = formatRupiah(runningSaldo);
+  }
+
+  range.setValues(values);
 }

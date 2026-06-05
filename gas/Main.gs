@@ -144,6 +144,14 @@ function doPost(e) {
           errors: errors
         }, 'Berhasil menyimpan ' + successList.length + ' transaksi' + (errors.length > 0 ? ', gagal ' + errors.length + ' baris.' : '.')));
 
+      case 'editCashBulk':
+        var editResult = editCashTransactionsBulk(body);
+        return jsonOutput(editResult);
+
+      case 'deleteCash':
+        var deleteResult = deleteCashTransactions(body);
+        return jsonOutput(deleteResult);
+
       // Bon
       case 'addBon':
         var bonResult = addBon(body);
@@ -179,6 +187,14 @@ function doPost(e) {
         var settleResult = settleBon(body);
         if (settleResult.success) notifyBonSettled(settleResult.data);
         return jsonOutput(settleResult);
+
+      case 'editBonBulk':
+        var editBonResult = editBonsBulk(body);
+        return jsonOutput(editBonResult);
+
+      case 'deleteBon':
+        var deleteBonResult = deleteBons(body);
+        return jsonOutput(deleteBonResult);
 
       // Config
       case 'updateConfig':

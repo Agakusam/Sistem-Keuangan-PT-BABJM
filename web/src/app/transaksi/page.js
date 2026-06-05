@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { fetchFromGas } from '@/lib/api';
+import { fetchFromGas, postToGas } from '@/lib/api';
 import TransaksiForm from '@/components/TransaksiForm';
-import { Download, Plus, Filter, Search, Calendar, Wallet, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2 } from 'lucide-react';
+import EditTransaksiGridModal from '@/components/EditTransaksiGridModal';
+import { Download, Plus, Filter, Search, Calendar, Wallet, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Edit2, Trash2 } from 'lucide-react';
 
 // Format Rupiah helper
 const formatRp = (num) => {
@@ -16,6 +17,8 @@ export default function TransaksiPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRows, setSelectedRows] = useState(new Set());
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Excel filter state variables
   const [filtersState, setFiltersState] = useState({
@@ -112,9 +115,30 @@ export default function TransaksiPage() {
           saldo_akhir: res.data.saldo_akhir || 0,
           total: res.data.total || 0
         });
+        setSelectedRows(new Set()); // Reset selections
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedRows.size} transaksi terpilih? Tindakan ini akan menghapus data di Google Sheet dan menghitung ulang seluruh saldo kas.`)) return;
+    
+    setLoading(true);
+    try {
+      const res = await postToGas('deleteCash', { rows: Array.from(selectedRows) });
+      if (res.success) {
+        alert(res.message || 'Transaksi terpilih berhasil dihapus!');
+        setSelectedRows(new Set());
+        loadData(startDate, endDate);
+      } else {
+        alert(`Gagal menghapus: ${res.error}`);
+      }
+    } catch (err) {
+      alert(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -522,6 +546,19 @@ export default function TransaksiPage() {
               <thead>
                 <tr>
                   <th style={{ width: '35px' }}>No.</th>
+                  <th style={{ width: '40px' }} className="no-print">
+                    <input 
+                      type="checkbox"
+                      checked={filteredData.length > 0 && filteredData.every(t => selectedRows.has(t._row))}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedRows(new Set(filteredData.map(t => t._row)));
+                        } else {
+                          setSelectedRows(new Set());
+                        }
+                      }}
+                    />
+                  </th>
                   {renderHeaderWithFilter('Tanggal', 'tanggal')}
                   {renderHeaderWithFilter('Keterangan', 'keterangan')}
                   {renderHeaderWithFilter('PIC', 'pic')}
@@ -534,8 +571,23 @@ export default function TransaksiPage() {
               </thead>
               <tbody>
                 {filteredData.length > 0 ? filteredData.map((t, idx) => (
-                  <tr key={idx}>
+                  <tr key={idx} style={{ background: selectedRows.has(t._row) ? 'rgba(16, 124, 65, 0.08)' : '' }}>
                     <td className="excel-row-num">{idx + 1}</td>
+                    <td className="no-print" style={{ textAlign: 'center' }}>
+                      <input 
+                        type="checkbox"
+                        checked={selectedRows.has(t._row)}
+                        onChange={(e) => {
+                          const newSelected = new Set(selectedRows);
+                          if (e.target.checked) {
+                            newSelected.add(t._row);
+                          } else {
+                            newSelected.delete(t._row);
+                          }
+                          setSelectedRows(newSelected);
+                        }}
+                      />
+                    </td>
                     <td>{formatDate(t.tanggal)}</td>
                     <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>
                       {t.debit_value > 0 ? (
@@ -565,7 +617,7 @@ export default function TransaksiPage() {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan="9" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data transaksi dalam rentang ini</td>
+                    <td colSpan="10" style={{ textAlign: 'center', padding: '2rem' }}>Tidak ada data transaksi dalam rentang ini</td>
                   </tr>
                 )}
               </tbody>
@@ -585,6 +637,54 @@ export default function TransaksiPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Action Bar */}
+      {selectedRows.size > 0 && (
+        <div className="floating-action-bar no-print" style={{
+          position: 'fixed',
+          bottom: '2rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255, 255, 255, 0.95)',
+          border: '1px solid var(--border)',
+          padding: '0.75rem 1.5rem',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1.5rem',
+          zIndex: 1000
+        }}>
+          <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>{selectedRows.size} baris terpilih</span>
+          <div style={{ borderLeft: '1px solid var(--border)', height: '20px' }}></div>
+          <button 
+            type="button"
+            className="btn btn-primary" 
+            style={{ padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', backgroundColor: 'var(--primary)' }}
+            onClick={() => setShowEditModal(true)}
+          >
+            <Edit2 size={14} /> Edit Grid Mode
+          </button>
+          <button 
+            type="button"
+            className="btn" 
+            style={{ color: 'var(--danger)', border: '1px solid var(--danger)', padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', background: 'transparent' }}
+            onClick={handleDeleteSelected}
+          >
+            <Trash2 size={14} /> Hapus Terpilih
+          </button>
+        </div>
+      )}
+
+      <EditTransaksiGridModal 
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        selectedTransactions={transactions.filter(t => selectedRows.has(t._row))}
+        onSuccess={() => {
+          setSelectedRows(new Set());
+          loadData(startDate, endDate);
+        }}
+      />
     </div>
   );
 }
