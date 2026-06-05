@@ -18,19 +18,37 @@ export default function EditBonGridModal({ isOpen, onClose, selectedBons, onSucc
 
   useEffect(() => {
     if (isOpen && selectedBons) {
-      setRows(selectedBons.map(b => {
-        const rawDate = b.tanggal ? String(b.tanggal).split('T')[0] : '';
-        return {
-          _row: b._row,
-          id_bon: b.id_bon,
-          tanggal: rawDate,
-          pic: b.pic || '',
-          keterangan: b.keterangan || '',
-          jumlah: b.nominal_value || 0,
-          status: b.status || 'BELUM'
-        };
-      }));
-      setError('');
+      try {
+        setRows(selectedBons.map(b => {
+          const parseRpNum = (str) => {
+            if (!str || str === 'Rp -' || str === '-') return 0;
+            const clean = String(str).replace(/[^0-9-]/g, '');
+            return parseInt(clean, 10) || 0;
+          };
+
+          const nominalVal = b.nominal_value !== undefined ? b.nominal_value : parseRpNum(b.nominal);
+
+          const formatDateStr = (d) => {
+            if (!d) return '';
+            const str = String(d).trim();
+            if (str.includes('T')) return str.split('T')[0];
+            return str;
+          };
+
+          return {
+            _row: b._row || 0,
+            id_bon: b.id_bon,
+            tanggal: formatDateStr(b.tanggal),
+            pic: b.pic || '',
+            keterangan: b.keterangan || '',
+            jumlah: nominalVal || '',
+            status: b.status || 'BELUM'
+          };
+        }));
+        setError('');
+      } catch (err) {
+        setError('Gagal memproses data bon: ' + err.message);
+      }
       setSuccessMsg('');
     }
   }, [isOpen, selectedBons]);
@@ -206,8 +224,32 @@ export default function EditBonGridModal({ isOpen, onClose, selectedBons, onSucc
   };
 
   return (
-    <div className="modal-backdrop no-print">
-      <div className="modal-content glass-card" style={{ maxWidth: '90vw', width: '1000px', padding: '1.5rem', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="modal-backdrop no-print" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.65)',
+      backdropFilter: 'blur(10px)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+      padding: '1rem'
+    }}>
+      <div className="modal-content glass-card" style={{ 
+        maxWidth: '90vw', 
+        width: '1050px', 
+        padding: '1.5rem', 
+        maxHeight: '90vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: 'var(--shadow-2xl)',
+        background: 'var(--bg-card)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)'
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ margin: 0 }}>Edit Bon Terpilih ({rows.length} Baris)</h3>
           <button type="button" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={onClose}>

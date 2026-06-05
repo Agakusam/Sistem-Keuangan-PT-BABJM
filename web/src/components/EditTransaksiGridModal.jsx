@@ -18,27 +18,44 @@ export default function EditTransaksiGridModal({ isOpen, onClose, selectedTransa
 
   useEffect(() => {
     if (isOpen && selectedTransactions) {
-      setRows(selectedTransactions.map(t => {
-        const isDebit = t.debit_value > 0;
-        const rawDate = t.tanggal ? String(t.tanggal).split('T')[0] : '';
-        const rawTglNota = t.tgl_nota ? String(t.tgl_nota).split('T')[0] : '';
-        const rawTglPenagihan = t.tgl_penagihan ? String(t.tgl_penagihan).split('T')[0] : '';
+      try {
+        setRows(selectedTransactions.map(t => {
+          const parseRpNum = (str) => {
+            if (!str || str === 'Rp -' || str === '-') return 0;
+            const clean = String(str).replace(/[^0-9-]/g, '');
+            return parseInt(clean, 10) || 0;
+          };
 
-        return {
-          _row: t._row,
-          jenis: isDebit ? 'DEBIT' : 'KREDIT',
-          tanggal: rawDate,
-          keterangan: isDebit ? (t.keterangan_debit || t.keterangan || '') : (t.keterangan_kredit || t.keterangan || ''),
-          jumlah: isDebit ? t.debit_value : t.kredit_value,
-          pic: t.pic || '',
-          no_id: t.no_id || '',
-          tgl_nota: rawTglNota,
-          tgl_penagihan: rawTglPenagihan,
-          lampiran: t.lampiran || '',
-          akun: t.akun || ''
-        };
-      }));
-      setError('');
+          const debVal = t.debit_value !== undefined ? t.debit_value : parseRpNum(t.debit);
+          const kreVal = t.kredit_value !== undefined ? t.kredit_value : parseRpNum(t.kredit);
+          const isDebit = debVal > 0;
+          const nominalVal = isDebit ? debVal : kreVal;
+
+          const formatDateStr = (d) => {
+            if (!d) return '';
+            const str = String(d).trim();
+            if (str.includes('T')) return str.split('T')[0];
+            return str;
+          };
+
+          return {
+            _row: t._row || 0,
+            jenis: isDebit ? 'DEBIT' : 'KREDIT',
+            tanggal: formatDateStr(t.tanggal),
+            keterangan: t.keterangan || (isDebit ? t.keterangan_debit || '' : t.keterangan_kredit || ''),
+            jumlah: nominalVal || '',
+            pic: t.pic || '',
+            no_id: t.no_id || '',
+            tgl_nota: formatDateStr(t.tgl_nota),
+            tgl_penagihan: formatDateStr(t.tgl_penagihan),
+            lampiran: t.lampiran || '',
+            akun: t.akun || ''
+          };
+        }));
+        setError('');
+      } catch (err) {
+        setError('Gagal memproses data transaksi: ' + err.message);
+      }
       setSuccessMsg('');
     }
   }, [isOpen, selectedTransactions]);
@@ -209,8 +226,32 @@ export default function EditTransaksiGridModal({ isOpen, onClose, selectedTransa
   };
 
   return (
-    <div className="modal-backdrop no-print">
-      <div className="modal-content glass-card" style={{ maxWidth: '95vw', width: '1200px', padding: '1.5rem', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="modal-backdrop no-print" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.65)',
+      backdropFilter: 'blur(10px)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+      padding: '1rem'
+    }}>
+      <div className="modal-content glass-card" style={{ 
+        maxWidth: '95vw', 
+        width: '1250px', 
+        padding: '1.5rem', 
+        maxHeight: '90vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: 'var(--shadow-2xl)',
+        background: 'var(--bg-card)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)'
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ margin: 0 }}>Edit Transaksi Kas Terpilih ({rows.length} Baris)</h3>
           <button type="button" style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }} onClick={onClose}>
