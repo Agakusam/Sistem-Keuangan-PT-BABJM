@@ -152,6 +152,9 @@ function doPost(e) {
         var deleteResult = deleteCashTransactions(body);
         return jsonOutput(deleteResult);
 
+      case 'importCashBulk':
+        return jsonOutput(importCashTransactionsBulk(body));
+
       // Bon
       case 'addBon':
         var bonResult = addBon(body);

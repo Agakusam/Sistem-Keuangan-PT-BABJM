@@ -447,6 +447,54 @@ function deleteCashTransactions(body) {
 }
 
 /**
+ * Import bulk transactions from Excel/CSV
+ * @param {Object} body {transactions: [ {tanggal, tgl_nota, akun, jenis, keterangan, pic, no_id, jumlah, tgl_penagihan, lampiran}, ... ]}
+ */
+function importCashTransactionsBulk(body) {
+  var list = body.transactions || [];
+  if (list.length === 0) return errorResponse('Tidak ada data transaksi untuk diimpor');
+
+  var sheet = getCashSheet();
+  var startRow = sheet.getLastRow() + 1; // First row where we insert new data
+
+  var rowsToAppend = [];
+  for (var i = 0; i < list.length; i++) {
+    var t = list[i];
+    var amount = parseFloat(t.jumlah) || 0;
+    var jenis = String(t.jenis).toUpperCase();
+    
+    var tDate = t.tanggal ? parseDate(t.tanggal) : null;
+    var tglNotaDate = t.tgl_nota ? parseDate(t.tgl_nota) : null;
+    var tglPenagihanDate = t.tgl_penagihan ? parseDate(t.tgl_penagihan) : null;
+
+    var row = [
+      tDate || '',                                           // Tanggal
+      tglNotaDate || '',                                      // Tgl. Nota
+      t.akun || '',                                          // Akun
+      jenis === 'DEBIT' ? String(t.keterangan).trim() : '',   // Keterangan Debit
+      jenis === 'KREDIT' ? String(t.keterangan).trim() : '',  // Keterangan Kredit (Keterangan)
+      t.pic || '',                                           // PIC
+      t.no_id || '',                                         // NO. ID
+      jenis === 'DEBIT' ? formatRupiah(amount) : 'Rp -',      // Debit
+      jenis === 'KREDIT' ? formatRupiah(amount) : '',        // Kredit
+      '',                                                    // Saldo Akhir (will be calculated below)
+      tglPenagihanDate || '',                                 // Tgl. Penagihan
+      t.lampiran || ''                                       // Lampiran
+    ];
+    rowsToAppend.push(row);
+  }
+
+  // Batch insert rows
+  var range = sheet.getRange(startRow, 1, rowsToAppend.length, 12);
+  range.setValues(rowsToAppend);
+
+  // Recalculate balances starting from startRow
+  _recalculateCashBalances(sheet, startRow);
+
+  return successResponse({ count: list.length }, 'Berhasil mengimpor ' + list.length + ' transaksi kas');
+}
+
+/**
  * Rekalkulasi saldo akhir dari startRow ke baris terakhir
  */
 function _recalculateCashBalances(sheet, startRow) {

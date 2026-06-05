@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { fetchFromGas, postToGas } from '@/lib/api';
 import TransaksiForm from '@/components/TransaksiForm';
 import EditTransaksiGridModal from '@/components/EditTransaksiGridModal';
-import { Download, Plus, Filter, Search, Calendar, Wallet, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Edit2, Trash2 } from 'lucide-react';
+import ImportModal from '@/components/ImportModal';
+import * as XLSX from 'xlsx';
+import { Download, Plus, Filter, Search, Calendar, Wallet, ArrowUpRight, ArrowDownRight, FileText, CheckCircle2, Edit2, Trash2, Upload } from 'lucide-react';
 
 // Format Rupiah helper
 const formatRp = (num) => {
@@ -19,6 +21,7 @@ export default function TransaksiPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Excel filter state variables
   const [filtersState, setFiltersState] = useState({
@@ -153,36 +156,37 @@ export default function TransaksiPage() {
     loadData(startDate, endDate);
   };
 
-  const handleExportCSV = () => {
-    let csvContent = "sep=;\n";
-    csvContent += "No.;Tanggal;Keterangan;PIC;No. ID;Lampiran;Debit;Kredit;Saldo Akhir\n";
-    
-    filteredData.forEach((t, idx) => {
-      const no = idx + 1;
-      const tgl = formatDate(t.tanggal);
-      const ket = t.debit_value > 0 
-        ? (t.keterangan_debit || t.keterangan || '') 
-        : (t.keterangan_kredit || t.keterangan || '');
-      const pic = t.pic || '';
-      const noId = t.no_id || '';
-      const lampiran = t.lampiran || '';
-      const deb = t.debit !== 'Rp -' ? t.debit : '';
-      const kre = t.kredit !== 'Rp -' ? t.kredit : '';
-      const sal = t.saldo_akhir || '';
-      
-      const clean = (str) => String(str).replace(/;/g, ',').replace(/\n/g, ' ');
-      
-      csvContent += `${no};${clean(tgl)};${clean(ket)};${clean(pic)};${clean(noId)};${clean(lampiran)};${clean(deb)};${clean(kre)};${clean(sal)}\n`;
+  const handleExportExcel = () => {
+    const wsData = [
+      [],
+      ["PT BABJM"],
+      ["LAPORAN PETTY CASH"],
+      [],
+      ["Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan", "PIC", "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan", "Lampiran"]
+    ];
+
+    filteredData.forEach(t => {
+      const row = [
+        t.tanggal ? t.tanggal.split('T')[0] : '',
+        t.tgl_nota ? t.tgl_nota.split('T')[0] : '',
+        t.akun || '',
+        t.debit_value > 0 ? (t.keterangan_debit || t.keterangan || '') : '',
+        t.kredit_value > 0 ? (t.keterangan_kredit || t.keterangan || '') : '',
+        t.pic || '',
+        t.no_id || '',
+        t.debit_value > 0 ? t.debit_value : '',
+        t.kredit_value > 0 ? t.kredit_value : '',
+        t.saldo_value || 0,
+        t.tgl_penagihan ? t.tgl_penagihan.split('T')[0] : '',
+        t.lampiran || ''
+      ];
+      wsData.push(row);
     });
-    
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Laporan_Kas_${startDate}_to_${endDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Cash_log");
+    XLSX.writeFile(wb, `Laporan_Kas_${startDate}_to_${endDate}.xlsx`);
   };
 
   const getCellValue = (row, col) => {
@@ -424,7 +428,10 @@ export default function TransaksiPage() {
           <p>Kelola pencatatan kas masuk dan keluar secara dinamis</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-secondary" onClick={handleExportCSV}>
+          <button className="btn btn-secondary" onClick={() => setShowImportModal(true)}>
+            <Upload size={18} /> Impor Excel
+          </button>
+          <button className="btn btn-secondary" onClick={handleExportExcel}>
             <Download size={18} /> Export Excel
           </button>
           <button className="btn btn-secondary" onClick={() => window.print()}>
@@ -682,6 +689,14 @@ export default function TransaksiPage() {
         selectedTransactions={transactions.filter(t => selectedRows.has(t._row))}
         onSuccess={() => {
           setSelectedRows(new Set());
+          loadData(startDate, endDate);
+        }}
+      />
+
+      <ImportModal 
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={() => {
           loadData(startDate, endDate);
         }}
       />
