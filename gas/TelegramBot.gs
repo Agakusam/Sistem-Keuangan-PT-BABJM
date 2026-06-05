@@ -57,29 +57,41 @@ function handleTelegramMessage(message) {
 
   // Pre-process button commands
   if (textLower.includes('kas masuk')) {
-    var msg = '🟢 <b>Quick Input Kas Masuk</b>\n\n'
-      + 'Salin format berikut, ubah nominal dan keterangan, lalu kirim:\n\n'
-      + '<code>/kas +[nominal] [keterangan]</code>\n\n'
-      + 'Contoh (ketuk untuk menyalin):\n'
-      + '<code>/kas +1000000 Pengisian saldo kas kecil</code>';
+    setState(chatId, { flow: 'quick_kas_masuk' });
+    var msg = '🟢 <b>Quick Kas Masuk (Debit)</b>\n\n'
+      + 'Silakan langsung ketik nominal dan keterangan transaksi:\n'
+      + 'Format: <code>[Nominal] [Keterangan]</code>\n\n'
+      + '💡 <b>Format Nominal:</b>\n'
+      + '• Angka biasa: <code>50000</code>\n'
+      + '• Ribuan: <code>50rb</code> atau <code>50k</code>\n'
+      + '• Jutaan: <code>1.5jt</code> atau <code>1.5juta</code>\n\n'
+      + 'Contoh: <code>1.5jt Pengisian Saldo Kas Kecil</code>';
     sendTelegramMessage(chatId, msg);
     return;
   }
   if (textLower.includes('kas keluar')) {
-    var msg = '🔴 <b>Quick Input Kas Keluar</b>\n\n'
-      + 'Salin format berikut, ubah nominal dan keterangan, lalu kirim:\n\n'
-      + '<code>/kas -[nominal] [keterangan]</code>\n\n'
-      + 'Contoh (ketuk untuk menyalin):\n'
-      + '<code>/kas -50000 Beli ATK dan fotokopi</code>';
+    setState(chatId, { flow: 'quick_kas_keluar' });
+    var msg = '🔴 <b>Quick Kas Keluar (Kredit)</b>\n\n'
+      + 'Silakan langsung ketik nominal dan keterangan transaksi:\n'
+      + 'Format: <code>[Nominal] [Keterangan]</code>\n\n'
+      + '💡 <b>Format Nominal:</b>\n'
+      + '• Angka biasa: <code>50000</code>\n'
+      + '• Ribuan: <code>50rb</code> atau <code>50k</code>\n'
+      + '• Jutaan: <code>1.5jt</code> atau <code>1.5juta</code>\n\n'
+      + 'Contoh: <code>50000 Beli ATK</code>';
     sendTelegramMessage(chatId, msg);
     return;
   }
   if (textLower.includes('quick bon')) {
-    var msg = '📋 <b>Quick Input Bon Baru</b>\n\n'
-      + 'Salin format berikut, ubah PIC, nominal, dan keterangan, lalu kirim:\n\n'
-      + '<code>/bon [PIC] [nominal] [keterangan]</code>\n\n'
-      + 'Contoh (ketuk untuk menyalin):\n'
-      + '<code>/bon Fita 500000 Belanja konsumsi rapat</code>';
+    setState(chatId, { flow: 'quick_bon' });
+    var msg = '📋 <b>Quick Bon Kas Baru</b>\n\n'
+      + 'Silakan langsung ketik PIC, nominal, dan keterangan bon:\n'
+      + 'Format: <code>[Nama PIC] [Nominal] [Keterangan]</code>\n\n'
+      + '💡 <b>Format Nominal:</b>\n'
+      + '• Angka biasa: <code>500000</code>\n'
+      + '• Ribuan: <code>500rb</code> atau <code>500k</code>\n'
+      + '• Jutaan: <code>1.5jt</code> atau <code>1.5juta</code>\n\n'
+      + 'Contoh: <code>Fita 500000 Belanja Konsumsi</code>';
     sendTelegramMessage(chatId, msg);
     return;
   }
@@ -542,29 +554,106 @@ function handleStateInput(chatId, text, state, username) {
         _showBonConfirmation(chatId, state);
         break;
     }
+  } else if (state.flow === 'quick_kas_masuk') {
+    var parsed = parseQuickKasText(text);
+    if (!parsed) {
+      sendTelegramMessage(chatId, '❌ Format tidak dikenal.\n\nHarap kirim dengan format:\n<code>[Nominal] [Keterangan]</code>\n\nContoh: <code>500000 Pengisian kas</code>');
+      return;
+    }
+    var result = addCashTransaction({
+      keterangan: parsed.deskripsi,
+      jumlah: parsed.jumlah,
+      jenis: 'DEBIT',
+      sumber: 'TELEGRAM'
+    });
+    if (result.success) {
+      notifyNewTransaction(result.data);
+      sendTelegramMessage(chatId,
+        '✅ <b>Kas Masuk Tercatat!</b>\n\n'
+        + '🟢 Kas Masuk: ' + result.data.jumlah_formatted + '\n'
+        + '📝 ' + result.data.keterangan + '\n'
+        + '💳 Saldo: ' + result.data.saldo_formatted
+      );
+    } else {
+      sendTelegramMessage(chatId, '❌ Gagal mencatat: ' + result.error);
+    }
+    clearState(chatId);
+
+  } else if (state.flow === 'quick_kas_keluar') {
+    var parsed = parseQuickKasText(text);
+    if (!parsed) {
+      sendTelegramMessage(chatId, '❌ Format tidak dikenal.\n\nHarap kirim dengan format:\n<code>[Nominal] [Keterangan]</code>\n\nContoh: <code>50000 Beli ATK</code>');
+      return;
+    }
+    var result = addCashTransaction({
+      keterangan: parsed.deskripsi,
+      jumlah: parsed.jumlah,
+      jenis: 'KREDIT',
+      sumber: 'TELEGRAM'
+    });
+    if (result.success) {
+      notifyNewTransaction(result.data);
+      sendTelegramMessage(chatId,
+        '✅ <b>Kas Keluar Tercatat!</b>\n\n'
+        + '🔴 Kas Keluar: ' + result.data.jumlah_formatted + '\n'
+        + '📝 ' + result.data.keterangan + '\n'
+        + '💳 Saldo: ' + result.data.saldo_formatted
+      );
+    } else {
+      sendTelegramMessage(chatId, '❌ Gagal mencatat: ' + result.error);
+    }
+    clearState(chatId);
+
+  } else if (state.flow === 'quick_bon') {
+    var parsed = parseQuickBonText(text);
+    if (!parsed) {
+      sendTelegramMessage(chatId, '❌ Format tidak dikenal.\n\nHarap kirim dengan format:\n<code>[Nama PIC] [Nominal] [Keterangan]</code>\n\nContoh: <code>Fita 500000 Belanja konsumsi</code>');
+      return;
+    }
+    var result = addBon({
+      pic: parsed.pic,
+      jumlah: parsed.jumlah,
+      keterangan: parsed.keterangan,
+      sumber: 'TELEGRAM'
+    });
+    if (result.success) {
+      notifyNewBon(result.data);
+      sendTelegramMessage(chatId,
+        '📋 <b>Bon Tercatat!</b>\n\n'
+        + '🆔 ' + result.data.id_bon + '\n'
+        + '👤 ' + result.data.pic + '\n'
+        + '💰 ' + result.data.nominal_formatted + '\n'
+        + '📝 ' + result.data.keterangan + '\n'
+        + '⏳ Status: BELUM'
+      );
+    } else {
+      sendTelegramMessage(chatId, '❌ Gagal mencatat bon: ' + result.error);
+    }
+    clearState(chatId);
+
   } else if (state.flow === 'rekap') {
     switch (state.step) {
       case 'tanggal_awal':
         var dateVal = parseDate(text);
         if (!dateVal) {
-          sendTelegramMessage(chatId, '❌ Format tanggal awal tidak valid. Coba lagi (Format: YYYY-MM-DD):\nContoh: <code>2026-05-01</code>');
+          sendTelegramMessage(chatId, '❌ Format tanggal awal tidak valid. Coba lagi (Format: <code>DD-MM-YYYY</code>):\nContoh: <code>01-05-2026</code>');
           return;
         }
         state.tanggal_awal = formatDateISO(dateVal);
         state.step = 'tanggal_akhir';
         setState(chatId, state);
-        sendTelegramMessage(chatId, '📊 Rekap: ' + state.tanggal_awal + ' s.d. ...\n\n📅 Ketik <b>Tanggal Akhir</b> (Format: <code>YYYY-MM-DD</code>):\nContoh: <code>2026-05-31</code>');
+        sendTelegramMessage(chatId, '📊 Rekap: ' + state.tanggal_awal + ' s.d. ...\n\n📅 Ketik <b>Tanggal Akhir</b> (Format: <code>DD-MM-YYYY</code>):\nContoh: <code>31-05-2026</code>');
         break;
 
       case 'tanggal_akhir':
         var dateValEnd = parseDate(text);
         if (!dateValEnd) {
-          sendTelegramMessage(chatId, '❌ Format tanggal akhir tidak valid. Coba lagi (Format: YYYY-MM-DD):\nContoh: <code>2026-05-31</code>');
+          sendTelegramMessage(chatId, '❌ Format tanggal akhir tidak valid. Coba lagi (Format: <code>DD-MM-YYYY</code>):\nContoh: <code>31-05-2026</code>');
           return;
         }
         var start = parseDate(state.tanggal_awal);
         if (dateValEnd < start) {
-          sendTelegramMessage(chatId, '❌ Tanggal akhir tidak boleh mendahului tanggal awal. Coba lagi (Format: YYYY-MM-DD):');
+          sendTelegramMessage(chatId, '❌ Tanggal akhir tidak boleh mendahului tanggal awal. Coba lagi (Format: <code>DD-MM-YYYY</code>):');
           return;
         }
         var tglAkhir = formatDateISO(dateValEnd);
@@ -688,6 +777,67 @@ function _executeBonTransaction(chatId, state, username) {
 
 function handleRekapStart(chatId) {
   setState(chatId, { flow: 'rekap', step: 'tanggal_awal' });
-  sendTelegramMessage(chatId, '📊 <b>Rekap Transaksi Kas</b>\n\n📅 Ketik <b>Tanggal Awal</b> (Format: <code>YYYY-MM-DD</code>):\nContoh: <code>2026-05-01</code>');
+  sendTelegramMessage(chatId, '📊 <b>Rekap Transaksi Kas</b>\n\n📅 Ketik <b>Tanggal Awal</b> (Format: <code>DD-MM-YYYY</code> atau <code>YYYY-MM-DD</code>):\nContoh: <code>01-05-2026</code> atau <code>2026-05-01</code>');
+}
+
+/**
+ * Parse text without command prefix: [nominal] [keterangan] or [keterangan] [nominal]
+ */
+function parseQuickKasText(text) {
+  if (!text) return null;
+  var parts = text.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+
+  // Cek token pertama apakah nominal
+  var firstAmount = parseAmount(parts[0]);
+  if (firstAmount > 0) {
+    return {
+      jumlah: firstAmount,
+      deskripsi: parts.slice(1).join(' ')
+    };
+  }
+
+  // Cek token terakhir apakah nominal
+  var lastAmount = parseAmount(parts[parts.length - 1]);
+  if (lastAmount > 0) {
+    return {
+      jumlah: lastAmount,
+      deskripsi: parts.slice(0, -1).join(' ')
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Parse text without command prefix: [PIC] [nominal] [keterangan]
+ */
+function parseQuickBonText(text) {
+  if (!text) return null;
+  var parts = text.trim().split(/\s+/);
+  if (parts.length < 3) return null;
+
+  // Format standar: [PIC] [Nominal] [Keterangan]
+  var pic = parts[0];
+  var amount = parseAmount(parts[1]);
+  if (amount > 0) {
+    return {
+      pic: pic,
+      jumlah: amount,
+      keterangan: parts.slice(2).join(' ')
+    };
+  }
+
+  // Format alternatif: [Nominal] [PIC] [Keterangan]
+  var altAmount = parseAmount(parts[0]);
+  if (altAmount > 0) {
+    return {
+      pic: parts[1],
+      jumlah: altAmount,
+      keterangan: parts.slice(2).join(' ')
+    };
+  }
+
+  return null;
 }
 

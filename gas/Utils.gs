@@ -90,9 +90,27 @@ function parseDate(val) {
   m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
 
+  // DD-MM-YYYY
+  m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+
+  // DD-MM-YY
+  m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{2})$/);
+  if (m) {
+    var year = parseInt(m[3], 10) + 2000;
+    return new Date(year, parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+  }
+
   // DD/MM/YYYY
   m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+
+  // DD/MM/YY
+  m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (m) {
+    var year = parseInt(m[3], 10) + 2000;
+    return new Date(year, parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+  }
 
   // General fallback for ISO date strings, UTC strings etc.
   var parsed = new Date(str);
