@@ -17,9 +17,9 @@ function getDefaultKeyboard() {
   return {
     keyboard: [
       [
-        { text: '🟢 Quick Kas Masuk' },
-        { text: '🔴 Quick Kas Keluar' },
-        { text: '📋 Quick Bon' }
+        { text: '🟢 Kas Masuk' },
+        { text: '🔴 Kas Keluar' },
+        { text: '📋 Bon Baru' }
       ],
       [
         { text: '🔍 Monitor Bon' },

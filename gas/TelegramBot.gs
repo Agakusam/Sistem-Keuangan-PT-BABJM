@@ -38,7 +38,7 @@ function handleTelegramMessage(message) {
   var isCommandButton = (
     textLower.includes('kas masuk') ||
     textLower.includes('kas keluar') ||
-    textLower.includes('quick bon') ||
+    textLower.includes('bon baru') ||
     textLower.includes('monitor bon') ||
     textLower.includes('cek saldo') ||
     textLower.includes('rekap transaksi')
@@ -58,7 +58,7 @@ function handleTelegramMessage(message) {
   // Pre-process button commands
   if (textLower.includes('kas masuk')) {
     setState(chatId, { flow: 'quick_kas_masuk' });
-    var msg = '🟢 <b>Quick Kas Masuk (Debit)</b>\n\n'
+    var msg = '🟢 <b>Kas Masuk (Debit)</b>\n\n'
       + 'Silakan langsung ketik nominal dan keterangan transaksi:\n'
       + 'Format: <code>[Nominal] [Keterangan]</code>\n\n'
       + '💡 <b>Format Nominal:</b>\n'
@@ -71,7 +71,7 @@ function handleTelegramMessage(message) {
   }
   if (textLower.includes('kas keluar')) {
     setState(chatId, { flow: 'quick_kas_keluar' });
-    var msg = '🔴 <b>Quick Kas Keluar (Kredit)</b>\n\n'
+    var msg = '🔴 <b>Kas Keluar (Kredit)</b>\n\n'
       + 'Silakan langsung ketik nominal dan keterangan transaksi:\n'
       + 'Format: <code>[Nominal] [Keterangan]</code>\n\n'
       + '💡 <b>Format Nominal:</b>\n'
@@ -82,9 +82,9 @@ function handleTelegramMessage(message) {
     sendTelegramMessage(chatId, msg);
     return;
   }
-  if (textLower.includes('quick bon')) {
+  if (textLower.includes('bon baru')) {
     setState(chatId, { flow: 'quick_bon' });
-    var msg = '📋 <b>Quick Bon Kas Baru</b>\n\n'
+    var msg = '📋 <b>Bon Kas Baru</b>\n\n'
       + 'Silakan langsung ketik PIC, nominal, dan keterangan bon:\n'
       + 'Format: <code>[Nama PIC] [Nominal] [Keterangan]</code>\n\n'
       + '💡 <b>Format Nominal:</b>\n'
