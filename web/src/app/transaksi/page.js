@@ -166,25 +166,64 @@ export default function TransaksiPage() {
 
       // Row heights
       worksheet.getRow(1).height = 15;
-      worksheet.getRow(2).height = 28;
-      worksheet.getRow(3).height = 20;
-      worksheet.getRow(4).height = 22; // Totals row
-      worksheet.getRow(5).height = 26; // Headers
+      worksheet.getRow(2).height = 28; // Title
+      worksheet.getRow(3).height = 20; // Subtitle
+      worksheet.getRow(4).height = 22; // Total Debit row
+      worksheet.getRow(5).height = 22; // Total Kredit row
+      worksheet.getRow(6).height = 26; // Headers
 
-      // Set Column widths (Column A is empty margin)
+      // Sort data chronologically (oldest -> newest)
+      const sortedData = [...filteredData].sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
+      // Format Rupiah helper for width calculation
+      const formatRpForWidth = (num) => {
+        if (num === null || num === undefined || isNaN(num) || num === '') return '';
+        return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      };
+
+      // Dynamically set column widths based on content length (auto‑fit)
+      const calcWidth = (rows, key, min = 10) => {
+        const maxLen = Math.max(
+          ...rows.map(r => (r[key] ? r[key].toString().length : 0)),
+          min
+        );
+        return maxLen + 2;
+      };
+
+      const calcCurrencyWidth = (rows, key, min = 12) => {
+        const maxLen = Math.max(
+          ...rows.map(r => {
+            const val = r[key];
+            if (val === undefined || val === null || val === '') return 0;
+            return formatRpForWidth(val).length;
+          }),
+          min
+        );
+        return maxLen + 3; // add margin for cell padding
+      };
+
+      const maxKreditLen = Math.max(
+        ...sortedData.map(t => {
+          const kreLen = t.kredit_value > 0 ? (t.keterangan_kredit || t.keterangan || '').length : 0;
+          const debLen = t.debit_value > 0 ? (t.keterangan_debit || t.keterangan || '').length - 12 : 0;
+          return Math.max(kreLen, debLen);
+        }),
+        33 // minimum width 33 so total width E + F is at least 45
+      );
+
       worksheet.columns = [
-        { key: 'empty_margin', width: 4 },      // Column A
-        { key: 'tanggal', width: 14 },           // Column B
-        { key: 'tgl_nota', width: 14 },          // Column C
-        { key: 'akun', width: 9 },               // Column D
-        { key: 'keterangan_debit', width: 28 },   // Column E (debit description - visible!)
-        { key: 'keterangan_kredit', width: 45 },  // Column F (kredit description - tabbed!)
-        { key: 'pic', width: 14 },               // Column G
-        { key: 'no_id', width: 18 },             // Column H
-        { key: 'debit', width: 18 },             // Column I
-        { key: 'kredit', width: 18 },            // Column J
-        { key: 'saldo_akhir', width: 20 },        // Column K
-        { key: 'tgl_penagihan', width: 15 }      // Column L
+        { key: 'empty_margin', width: 4 }, // Column A (margin)
+        { key: 'tanggal',       width: calcWidth(sortedData, 'tanggal', 12) },
+        { key: 'tgl_nota',      width: calcWidth(sortedData, 'tgl_nota', 12) },
+        { key: 'akun',          width: calcWidth(sortedData, 'akun', 10) },
+        { key: 'keterangan_debit',  width: 12 }, // keep debit column narrow
+        { key: 'keterangan_kredit', width: maxKreditLen },
+        { key: 'pic',          width: calcWidth(sortedData, 'pic', 12) },
+        { key: 'no_id',        width: calcWidth(sortedData, 'no_id', 15) },
+        { key: 'debit',        width: calcCurrencyWidth(sortedData, 'debit_value', 12) },
+        { key: 'kredit',       width: calcCurrencyWidth(sortedData, 'kredit_value', 12) },
+        { key: 'saldo_akhir',  width: calcCurrencyWidth(sortedData, 'saldo_value', 15) },
+        { key: 'tgl_penagihan',width: calcWidth(sortedData, 'tgl_penagihan', 12) }
       ];
 
       // Banner Title B2:L2
@@ -215,26 +254,60 @@ export default function TransaksiPage() {
       const totalDebit = filteredData.reduce((sum, t) => sum + (t.debit_value || 0), 0);
       const totalKredit = filteredData.reduce((sum, t) => sum + (t.kredit_value || 0), 0);
 
-      // Add Sum Totals in Row 4 below the subtitle
-      worksheet.mergeCells('B4:E4');
-      const debSumCell = worksheet.getCell('B4');
-      debSumCell.value = `Total Debit: Rp ${totalDebit.toLocaleString('id-ID')}`;
-      debSumCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF047857' } }; // Dark Green
-      debSumCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      // Define border styles for totals
+      const borderGreen = {
+        top: { style: 'thin', color: { argb: 'FFA9D08E' } },
+        bottom: { style: 'thin', color: { argb: 'FFA9D08E' } },
+        left: { style: 'thin', color: { argb: 'FFA9D08E' } },
+        right: { style: 'thin', color: { argb: 'FFA9D08E' } }
+      };
+      const borderRed = {
+        top: { style: 'thin', color: { argb: 'FFF4B084' } },
+        bottom: { style: 'thin', color: { argb: 'FFF4B084' } },
+        left: { style: 'thin', color: { argb: 'FFF4B084' } },
+        right: { style: 'thin', color: { argb: 'FFF4B084' } }
+      };
 
-      worksheet.mergeCells('F4:I4');
-      const kreSumCell = worksheet.getCell('F4');
-      kreSumCell.value = `Total Kredit: Rp ${totalKredit.toLocaleString('id-ID')}`;
-      kreSumCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFB91C1C' } }; // Dark Red
-      kreSumCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      // Total Debit (Row 4, Col E & F)
+      const debLabelCell = worksheet.getCell('E4');
+      debLabelCell.value = 'Total Debit:';
+      debLabelCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF275623' } }; // Dark green
+      debLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } }; // Light green
+      debLabelCell.alignment = { vertical: 'middle', horizontal: 'right' };
+      debLabelCell.border = borderGreen;
 
-      // Headers row 5 (Columns B to L)
+      const debAmountCell = worksheet.getCell('F4');
+      debAmountCell.value = totalDebit;
+      debAmountCell.numFmt = '"Rp "#,##0';
+      debAmountCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF275623' } }; // Dark green
+      debAmountCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2EFDA' } }; // Light green
+      debAmountCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      debAmountCell.border = borderGreen;
+
+      // Total Kredit (Row 5, Col E & F)
+      const kreLabelCell = worksheet.getCell('E5');
+      kreLabelCell.value = 'Total Kredit:';
+      kreLabelCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFC00000' } }; // Dark red
+      kreLabelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2DCDB' } }; // Light red
+      kreLabelCell.alignment = { vertical: 'middle', horizontal: 'right' };
+      kreLabelCell.border = borderRed;
+
+      const kreAmountCell = worksheet.getCell('F5');
+      kreAmountCell.value = totalKredit;
+      kreAmountCell.numFmt = '"Rp "#,##0';
+      kreAmountCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFC00000' } }; // Dark red
+      kreAmountCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2DCDB' } }; // Light red
+      kreAmountCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      kreAmountCell.border = borderRed;
+
+      // Headers row 6 (Columns B to L)
       const headers = [
-        "Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan", "PIC", 
-        "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan"
-      ];
-      
-      const headerRow = worksheet.getRow(5);
+          "Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan Kredit", "PIC", 
+          "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan"
+        ];
+
+      const headerRow = worksheet.getRow(6);
+      headerRow.height = 26;
       headers.forEach((h, index) => {
         const colNum = index + 2; // Start at Column B (2)
         const cell = headerRow.getCell(colNum);
@@ -243,7 +316,7 @@ export default function TransaksiPage() {
         cell.fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FF1A73E8' } // Medium Blue matching screenshot
+          fgColor: { argb: 'FF1A73E8' }
         };
         cell.alignment = { vertical: 'middle', horizontal: 'center' };
         cell.border = {
@@ -255,15 +328,18 @@ export default function TransaksiPage() {
       });
 
       // Merge Column E (5) and F (6) headers into "Uraian"
-      worksheet.mergeCells('E5:F5');
-      const mergedHeader = worksheet.getCell('E5');
+      worksheet.mergeCells('E6:F6');
+      const mergedHeader = worksheet.getCell('E6');
       mergedHeader.value = 'Uraian';
+      mergedHeader.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+      mergedHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A73E8' } };
+      mergedHeader.alignment = { vertical: 'middle', horizontal: 'center' };
       mergedHeader.border = {
         top: { style: 'thin', color: { argb: 'FF155CB0' } },
         left: { style: 'thin', color: { argb: 'FF155CB0' } },
         bottom: { style: 'medium', color: { argb: 'FF155CB0' } }
       };
-      worksheet.getCell('F5').border = {
+      worksheet.getCell('F6').border = {
         top: { style: 'thin', color: { argb: 'FF155CB0' } },
         right: { style: 'thin', color: { argb: 'FF155CB0' } },
         bottom: { style: 'medium', color: { argb: 'FF155CB0' } }
@@ -276,12 +352,12 @@ export default function TransaksiPage() {
         right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
       };
 
-      let currentRowNum = 6;
+      let currentRowNum = 7;
       let lastDate = null;
       let lastBalance = 0;
       let prevRowWasSeparator = false;
 
-      filteredData.forEach(t => {
+      sortedData.forEach(t => {
         // Check if this row is already a GSheet separator (blank structural row)
         const isGSheetSeparator = !t.tanggal && !t.debit_value && !t.kredit_value;
 
@@ -340,10 +416,10 @@ export default function TransaksiPage() {
         
         const debVal = t.debit_value > 0 ? t.debit_value : null;
         const kreVal = t.kredit_value > 0 ? t.kredit_value : null;
-        const salVal = t.saldo_value || 0;
+        const salVal = t.saldo_value !== undefined && t.saldo_value !== null ? t.saldo_value : null;
 
-        const ketDeb = t.debit_value > 0 ? (t.keterangan_debit || t.keterangan || '') : '';
-        const ketKre = t.kredit_value > 0 ? (t.keterangan_kredit || t.keterangan || '') : '';
+        const ketDeb = t.debit_value > 0 ? (t.keterangan_debit || t.keterangan || null) : null;
+        const ketKre = t.kredit_value > 0 ? (t.keterangan_kredit || t.keterangan || null) : null;
 
         row.values = [
           '', // Column A (empty margin)
@@ -671,11 +747,11 @@ export default function TransaksiPage() {
           <p>Kelola pencatatan kas masuk dan keluar secara dinamis</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-secondary" onClick={() => setShowImportModal(true)}>
-            <Upload size={18} /> Impor Excel
+          <button className="btn btn-primary flex items-center gap-1" onClick={() => setShowImportModal(true)}>
+            <Upload size={16} /> Import
           </button>
-          <button className="btn btn-secondary" onClick={handleExportExcel}>
-            <Download size={18} /> Export Excel
+          <button className="btn btn-secondary flex items-center gap-1" onClick={handleExportExcel}>
+            <Download size={16} /> Export
           </button>
           <button className="btn btn-secondary" onClick={() => window.print()}>
             <FileText size={18} /> Cetak PDF
