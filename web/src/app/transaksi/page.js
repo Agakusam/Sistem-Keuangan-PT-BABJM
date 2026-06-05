@@ -156,37 +156,161 @@ export default function TransaksiPage() {
     loadData(startDate, endDate);
   };
 
-  const handleExportExcel = () => {
-    const wsData = [
-      [],
-      ["PT BABJM"],
-      ["LAPORAN PETTY CASH"],
-      [],
-      ["Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan", "PIC", "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan", "Lampiran"]
-    ];
+  const handleExportExcel = async () => {
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Cash_log', {
+        views: [{ showGridLines: true }]
+      });
 
-    filteredData.forEach(t => {
-      const row = [
-        t.tanggal ? t.tanggal.split('T')[0] : '',
-        t.tgl_nota ? t.tgl_nota.split('T')[0] : '',
-        t.akun || '',
-        t.debit_value > 0 ? (t.keterangan_debit || t.keterangan || '') : '',
-        t.kredit_value > 0 ? (t.keterangan_kredit || t.keterangan || '') : '',
-        t.pic || '',
-        t.no_id || '',
-        t.debit_value > 0 ? t.debit_value : '',
-        t.kredit_value > 0 ? t.kredit_value : '',
-        t.saldo_value || 0,
-        t.tgl_penagihan ? t.tgl_penagihan.split('T')[0] : '',
-        t.lampiran || ''
+      // Row heights
+      worksheet.getRow(1).height = 15;
+      worksheet.getRow(2).height = 28;
+      worksheet.getRow(3).height = 20;
+      worksheet.getRow(4).height = 15;
+      worksheet.getRow(5).height = 26;
+
+      // Set Column widths
+      worksheet.columns = [
+        { key: 'tanggal', width: 18 },
+        { key: 'tgl_nota', width: 15 },
+        { key: 'akun', width: 12 },
+        { key: 'keterangan_debit', width: 35 },
+        { key: 'keterangan_kredit', width: 35 },
+        { key: 'pic', width: 15 },
+        { key: 'no_id', width: 22 },
+        { key: 'debit', width: 20 },
+        { key: 'kredit', width: 20 },
+        { key: 'saldo_akhir', width: 22 },
+        { key: 'tgl_penagihan', width: 18 },
+        { key: 'lampiran', width: 25 }
       ];
-      wsData.push(row);
-    });
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Cash_log");
-    XLSX.writeFile(wb, `Laporan_Kas_${startDate}_to_${endDate}.xlsx`);
+      // Banner Title A2:L2
+      worksheet.mergeCells('A2:L2');
+      const titleCell = worksheet.getCell('A2');
+      titleCell.value = 'PT BERKAH AMANAH BERSAMA JAYA MAKMUR (PT BABJM)';
+      titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF107C41' }
+      };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Subtitle A3:L3
+      worksheet.mergeCells('A3:L3');
+      const subtitleCell = worksheet.getCell('A3');
+      subtitleCell.value = `LAPORAN PETTY CASH (PERIODE: ${formatDate(startDate)} s/d ${formatDate(endDate)})`;
+      subtitleCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF107C41' } };
+      subtitleCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE1F0E7' }
+      };
+      subtitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Headers row 5
+      const headers = [
+        "Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan", "PIC", 
+        "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan", "Lampiran"
+      ];
+      
+      const headerRow = worksheet.getRow(5);
+      headers.forEach((h, index) => {
+        const cell = headerRow.getCell(index + 1);
+        cell.value = h;
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF107C41' } // Dark Green
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF0D5F32' } },
+          left: { style: 'thin', color: { argb: 'FF0D5F32' } },
+          bottom: { style: 'medium', color: { argb: 'FF0D5F32' } },
+          right: { style: 'thin', color: { argb: 'FF0D5F32' } }
+        };
+      });
+
+      const borderThin = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+      };
+
+      let currentRowNum = 6;
+      filteredData.forEach(t => {
+        const row = worksheet.getRow(currentRowNum);
+        row.height = 20;
+
+        const dateStr = t.tanggal ? t.tanggal.split('T')[0] : '';
+        const notaDateStr = t.tgl_nota ? t.tgl_nota.split('T')[0] : '';
+        const tglPenagihanStr = t.tgl_penagihan ? t.tgl_penagihan.split('T')[0] : '';
+        const account = t.akun || '';
+        const pic = t.pic || '';
+        const noId = t.no_id || '';
+        const lampiran = t.lampiran || '';
+        
+        const debVal = t.debit_value > 0 ? t.debit_value : null;
+        const kreVal = t.kredit_value > 0 ? t.kredit_value : null;
+        const salVal = t.saldo_value || 0;
+
+        const ketDeb = t.debit_value > 0 ? (t.keterangan_debit || t.keterangan || '') : '';
+        const ketKre = t.kredit_value > 0 ? (t.keterangan_kredit || t.keterangan || '') : '';
+
+        row.values = [
+          dateStr,
+          notaDateStr,
+          account,
+          ketDeb,
+          ketKre,
+          pic,
+          noId,
+          debVal,
+          kreVal,
+          salVal,
+          tglPenagihanStr,
+          lampiran
+        ];
+
+        for (let c = 1; c <= 12; c++) {
+          const cell = row.getCell(c);
+          cell.font = { name: 'Segoe UI', size: 10 };
+          cell.border = borderThin;
+
+          // Alignment & Formatting
+          if (c === 1 || c === 2 || c === 3 || c === 6 || c === 7 || c === 11) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else if (c === 8 || c === 9 || c === 10) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            if (cell.value !== '' && cell.value !== null) {
+              cell.numFmt = '"Rp "#,##0';
+            }
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
+        }
+
+        currentRowNum++;
+      });
+
+      // Write file to buffer and download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `Laporan_Kas_${startDate}_to_${endDate}.xlsx`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export Excel failed:', err);
+    }
   };
 
   const getCellValue = (row, col) => {

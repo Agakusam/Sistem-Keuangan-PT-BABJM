@@ -303,8 +303,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
           keterangan_kredit: headers.findIndex(h => (h.includes('keterangan') || h.trim() === 'keterangan') && !h.includes('debit')),
           pic: headers.findIndex(h => h.includes('pic')),
           no_id: headers.findIndex(h => h.includes('id')),
-          debit: headers.findIndex(h => h.includes('debit')),
-          kredit: headers.findIndex(h => h.includes('kredit')),
+          debit: headers.findIndex(h => h.includes('debit') && !h.includes('keterangan') && !h.includes('ket.')),
+          kredit: headers.findIndex(h => h.includes('kredit') && !h.includes('keterangan') && !h.includes('ket.')),
           tgl_penagihan: headers.findIndex(h => h.includes('penagihan') || h.includes('tagih')),
           lampiran: headers.findIndex(h => h.includes('lampiran') || h.includes('link'))
         };
@@ -360,67 +360,320 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
   };
 
   // Generate and download Excel template
-  const downloadTemplate = () => {
-    const wsData = [
-      [],
-      ["PT BABJM"],
-      ["LAPORAN PETTY CASH"],
-      [],
-      [
-        "Tanggal (* Wajib)", 
-        "Tgl. Nota (Opsional)", 
-        "Akun (Opsional)", 
-        "Keterangan Debit (* Wajib jika ada Debit)", 
-        "Keterangan Kredit (* Wajib jika ada Kredit)", 
-        "PIC (Opsional)", 
-        "NO. ID (Opsional)", 
-        "Debit (nominal)", 
-        "Kredit (nominal)", 
-        "Saldo Akhir (Abaikan)", 
-        "Tgl. Penagihan (Opsional)", 
-        "Lampiran (Opsional)"
-      ],
-      ["2026-06-05", "", "", "Pengisian Kas Masuk", "", "Fita", "", "5500000", "", "", "", ""],
-      ["2026-06-05", "05-Jun-26", "", "", "Beli Konsumsi Rapat Kantor", "Budiman", "", "", "120000", "", "", ""]
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
-    // Create detailed guideline sheet
-    const wsGuideData = [
-      ["PANDUAN PENGISIAN TEMPLATE IMPORT KAS KECIL - PT BABJM"],
-      [],
-      ["1. KETENTUAN UMUM KOLOM"],
-      ["   - Kolom dengan keterangan (*) Wajib adalah kolom wajib diisi."],
-      ["   - Kolom yang mutlak wajib untuk semua transaksi: Tanggal."],
-      ["   - Saldo Akhir tidak perlu diisi (akan dihitung secara otomatis oleh sistem)."],
-      [],
-      ["2. ATURAN TRANSAKSI MASUK (DEBIT)"],
-      ["   - Kolom Debit diisi nominal angka saja (tanpa Rp, titik, atau koma). Contoh: 5500000"],
-      ["   - Kolom Keterangan Debit WAJIB diisi penjelasan transaksi masuk."],
-      ["   - Kolom Kredit dan Keterangan Kredit harus dikosongkan."],
-      [],
-      ["3. ATURAN TRANSAKSI KELUAR (KREDIT)"],
-      ["   - Kolom Kredit diisi nominal angka saja (tanpa Rp, titik, atau koma). Contoh: 120000"],
-      ["   - Kolom Keterangan Kredit WAJIB diisi penjelasan transaksi keluar."],
-      ["   - Kolom Debit dan Keterangan Debit harus dikosongkan."],
-      [],
-      ["4. FORMAT KOLOM TANGGAL"],
-      ["   - Gunakan format tanggal: YYYY-MM-DD (contoh: 2026-06-05) atau DD-MM-YYYY (contoh: 05-06-2026)."],
-      [],
-      ["5. KOLOM OPSIONAL LAINNYA"],
-      ["   - Tgl. Nota: Tanggal pada nota fisik (format tanggal)."],
-      ["   - Akun: Kode akun akuntansi jika ada."],
-      ["   - PIC: Nama penanggung jawab transaksi."],
-      ["   - NO. ID: Nomor nota/kuitansi/nomor eproc."],
-      ["   - Tgl. Penagihan: Tanggal tagihan ditagih."],
-      ["   - Lampiran: Link/URL ke berkas nota (Google Drive, dll)."]
-    ];
-    const wsGuide = XLSX.utils.aoa_to_sheet(wsGuideData);
-    
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Cash_log");
-    XLSX.utils.book_append_sheet(wb, wsGuide, "Panduan_Pengisian");
-    XLSX.writeFile(wb, "Template_Import_PettyCash.xlsx");
+  const downloadTemplate = async () => {
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Cash_log', {
+        views: [{ showGridLines: true }]
+      });
+
+      // Set Row Heights
+      worksheet.getRow(1).height = 15;
+      worksheet.getRow(2).height = 30; // Title banner
+      worksheet.getRow(3).height = 20; // Subtitle
+      worksheet.getRow(4).height = 25; // Legend row
+      worksheet.getRow(5).height = 28; // Header row
+      worksheet.getRow(6).height = 22; // Sample row 1
+      worksheet.getRow(7).height = 22; // Sample row 2
+
+      // Set Column widths
+      worksheet.columns = [
+        { key: 'tanggal', width: 18 },
+        { key: 'tgl_nota', width: 16 },
+        { key: 'akun', width: 12 },
+        { key: 'keterangan_debit', width: 35 },
+        { key: 'keterangan_kredit', width: 35 },
+        { key: 'pic', width: 15 },
+        { key: 'no_id', width: 22 },
+        { key: 'debit', width: 20 },
+        { key: 'kredit', width: 20 },
+        { key: 'saldo_akhir', width: 22 },
+        { key: 'tgl_penagihan', width: 18 },
+        { key: 'lampiran', width: 25 }
+      ];
+
+      // Title Banner
+      worksheet.mergeCells('A2:L2');
+      const titleCell = worksheet.getCell('A2');
+      titleCell.value = 'PT BERKAH AMANAH BERSAMA JAYA MAKMUR (PT BABJM)';
+      titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF107C41' } // Professional Excel Green
+      };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Subtitle
+      worksheet.mergeCells('A3:L3');
+      const subtitleCell = worksheet.getCell('A3');
+      subtitleCell.value = 'TEMPLATE IMPORT DATA TRANSAKSI KAS KECIL (GSHEET ALIGNMENT)';
+      subtitleCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF107C41' } };
+      subtitleCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE1F0E7' } // Light Green
+      };
+      subtitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Legend / Color Keys in Row 4
+      worksheet.mergeCells('A4:C4');
+      const leg1 = worksheet.getCell('A4');
+      leg1.value = '🛑 WARNA MERAH = WAJIB DIISI';
+      leg1.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF991B1B' } };
+      leg1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+      leg1.alignment = { vertical: 'middle', horizontal: 'center' };
+      leg1.border = {
+        top: { style: 'thin', color: { argb: 'FFEF4444' } },
+        left: { style: 'thin', color: { argb: 'FFEF4444' } },
+        bottom: { style: 'thin', color: { argb: 'FFEF4444' } },
+        right: { style: 'thin', color: { argb: 'FFEF4444' } }
+      };
+
+      worksheet.mergeCells('D4:E4');
+      const leg2 = worksheet.getCell('D4');
+      leg2.value = '⚠️ WARNA KUNING = WAJIB JIKA TRANSAKSI';
+      leg2.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF92400E' } };
+      leg2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+      leg2.alignment = { vertical: 'middle', horizontal: 'center' };
+      leg2.border = {
+        top: { style: 'thin', color: { argb: 'FFF59E0B' } },
+        left: { style: 'thin', color: { argb: 'FFF59E0B' } },
+        bottom: { style: 'thin', color: { argb: 'FFF59E0B' } },
+        right: { style: 'thin', color: { argb: 'FFF59E0B' } }
+      };
+
+      worksheet.mergeCells('F4:I4');
+      const leg3 = worksheet.getCell('F4');
+      leg3.value = 'ℹ️ WARNA BIRU = OPSIONAL (BEBAS DIISI)';
+      leg3.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF0369A1' } };
+      leg3.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0F2FE' } };
+      leg3.alignment = { vertical: 'middle', horizontal: 'center' };
+      leg3.border = {
+        top: { style: 'thin', color: { argb: 'FF38BDF8' } },
+        left: { style: 'thin', color: { argb: 'FF38BDF8' } },
+        bottom: { style: 'thin', color: { argb: 'FF38BDF8' } },
+        right: { style: 'thin', color: { argb: 'FF38BDF8' } }
+      };
+
+      worksheet.mergeCells('J4:L4');
+      const leg4 = worksheet.getCell('J4');
+      leg4.value = '🔒 ABU-ABU = OTOMATIS (JANGAN DIISI)';
+      leg4.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF4B5563' } };
+      leg4.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+      leg4.alignment = { vertical: 'middle', horizontal: 'center' };
+      leg4.border = {
+        top: { style: 'thin', color: { argb: 'FF9CA3AF' } },
+        left: { style: 'thin', color: { argb: 'FF9CA3AF' } },
+        bottom: { style: 'thin', color: { argb: 'FF9CA3AF' } },
+        right: { style: 'thin', color: { argb: 'FF9CA3AF' } }
+      };
+
+      // Define Headers Data & Styles
+      const headers = [
+        { text: 'Tanggal', type: 'required' },
+        { text: 'Tgl. Nota', type: 'optional' },
+        { text: 'Akun', type: 'optional' },
+        { text: 'Keterangan Debit', type: 'conditional' },
+        { text: 'Keterangan', type: 'conditional' }, // Keterangan Kredit in Gsheet
+        { text: 'PIC', type: 'optional' },
+        { text: 'NO. ID', type: 'optional' },
+        { text: 'Debit', type: 'conditional' },
+        { text: 'Kredit', type: 'conditional' },
+        { text: 'Saldo Akhir', type: 'automatic' },
+        { text: 'Tgl. Penagihan', type: 'optional' },
+        { text: 'Lampiran', type: 'optional' }
+      ];
+
+      const headerRow = worksheet.getRow(5);
+      headers.forEach((h, index) => {
+        const cell = headerRow.getCell(index + 1);
+        cell.value = h.text;
+        
+        // Choose styling based on field type
+        let fgColor, fontColor, borderStyle;
+        if (h.type === 'required') {
+          fgColor = 'FFFEE2E2'; // Pastel Red
+          fontColor = 'FF991B1B'; // Dark Red
+          borderStyle = 'FFEF4444';
+        } else if (h.type === 'conditional') {
+          fgColor = 'FFFEF3C7'; // Pastel Yellow
+          fontColor = 'FF92400E'; // Dark Yellow
+          borderStyle = 'FFF59E0B';
+        } else if (h.type === 'optional') {
+          fgColor = 'FFE0F2FE'; // Pastel Blue
+          fontColor = 'FF0369A1'; // Dark Blue
+          borderStyle = 'FF38BDF8';
+        } else if (h.type === 'automatic') {
+          fgColor = 'FFE5E7EB'; // Gray
+          fontColor = 'FF4B5563'; // Dark Gray
+          borderStyle = 'FF9CA3AF';
+        }
+
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: fontColor } };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: fgColor }
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = {
+          top: { style: 'medium', color: { argb: borderStyle } },
+          left: { style: 'thin', color: { argb: borderStyle } },
+          bottom: { style: 'medium', color: { argb: borderStyle } },
+          right: { style: 'thin', color: { argb: borderStyle } }
+        };
+      });
+
+      // Insert Sample Row 1
+      const r6 = worksheet.getRow(6);
+      r6.values = ['2026-06-05', '', '', 'Pengisian Saldo Kas Kecil', '', 'Fita', 'TRX-101', 5500000, '', '', '', 'https://drive.google.com/...'];
+      
+      // Insert Sample Row 2
+      const r7 = worksheet.getRow(7);
+      r7.values = ['2026-06-05', '2026-06-05', '5012', '', 'Konsumsi Rapat Direksi', 'Budiman', 'NOTA-202', '', 120000, '', '', ''];
+
+      // Apply cell styling to sample rows
+      const borderThin = {
+        top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+        right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+      };
+
+      const fontData = { name: 'Segoe UI', size: 10 };
+
+      [6, 7].forEach(rowNum => {
+        const row = worksheet.getRow(rowNum);
+        for (let c = 1; c <= 12; c++) {
+          const cell = row.getCell(c);
+          cell.font = fontData;
+          cell.border = borderThin;
+          
+          // Alignments & formats
+          if (c === 1 || c === 2 || c === 3 || c === 6 || c === 7 || c === 11) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else if (c === 8 || c === 9 || c === 10) {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            if (cell.value !== '' && cell.value !== null) {
+              cell.numFmt = '"Rp "#,##0';
+            }
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
+          
+          // Gray out the automated saldo cell
+          if (c === 10) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF3F4F6' }
+            };
+          }
+        }
+      });
+
+      // Create Guide Sheet (Panduan_Pengisian)
+      const wsGuide = workbook.addWorksheet('Panduan_Pengisian', {
+        views: [{ showGridLines: true }]
+      });
+      
+      wsGuide.columns = [
+        { width: 25 }, // Topic
+        { width: 70 }, // Instruction
+        { width: 35 }  // Example
+      ];
+
+      // Set row heights for guide
+      wsGuide.getRow(1).height = 15;
+      wsGuide.getRow(2).height = 30; // Title banner
+      wsGuide.getRow(3).height = 20;
+
+      // Title Banner
+      wsGuide.mergeCells('A2:C2');
+      const guideTitle = wsGuide.getCell('A2');
+      guideTitle.value = 'PANDUAN LENGKAP PENGISIAN TEMPLATE IMPORT KAS KECIL';
+      guideTitle.font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+      guideTitle.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF107C41' } };
+      guideTitle.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Subtitle
+      wsGuide.mergeCells('A3:C3');
+      const guideSubtitle = wsGuide.getCell('A3');
+      guideSubtitle.value = 'Harap perhatikan ketentuan warna kolom berikut agar proses impor tidak gagal.';
+      guideSubtitle.font = { name: 'Segoe UI', size: 9, italic: true, color: { argb: 'FF4B5563' } };
+      guideSubtitle.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Write guides
+      const guideData = [
+        ['1. Ketentuan Umum', 'Kolom berwarna MERAH adalah kolom wajib diisi (tidak boleh kosong).', 'Tanggal (WAJIB)'],
+        ['', 'Kolom berwarna KUNING wajib diisi bersesuaian dengan tipe transaksi (Debit atau Kredit).', 'Keterangan Debit & Keterangan (Kredit)'],
+        ['', 'Kolom berwarna BIRU adalah kolom opsional (boleh diisi atau dikosongkan).', 'Tgl. Nota, Akun, PIC, No. ID, Tgl. Penagihan, Lampiran'],
+        ['', 'Kolom berwarna ABU-ABU GELAP akan terisi secara otomatis oleh sistem (jangan diisi).', 'Saldo Akhir'],
+        ['', '', ''],
+        ['2. Transaksi Masuk (Debit)', 'Isi nominal uang pada kolom Debit (nominal). Hanya angka saja, tanpa Rp, titik, atau koma.', '5500000 (menjadi Rp 5.500.000)'],
+        ['', 'Tulis deskripsi kas masuk pada kolom Keterangan Debit.', 'Pengisian kas dari kantor pusat'],
+        ['', 'Kosongkan kolom Kredit (nominal) dan Keterangan (Kredit).', '[Kosong]'],
+        ['', '', ''],
+        ['3. Transaksi Keluar (Kredit)', 'Isi nominal uang pada kolom Kredit (nominal). Hanya angka saja, tanpa Rp, titik, atau koma.', '120000 (menjadi Rp 120.000)'],
+        ['', 'Tulis deskripsi kas keluar pada kolom Keterangan (Kredit).', 'Pembelian konsumsi rapat tim'],
+        ['', 'Kosongkan kolom Debit (nominal) dan Keterangan Debit.', '[Kosong]'],
+        ['', '', ''],
+        ['4. Format Tanggal', 'Gunakan format standar internasional YYYY-MM-DD atau format Indonesia DD-MM-YYYY.', '2026-06-05 atau 05-06-2026'],
+        ['', '', ''],
+        ['5. Lampiran Bukti Nota', 'Masukkan tautan link online (misal Google Drive, Dropbox, e-proc) dokumen nota fisik.', 'https://drive.google.com/...']
+      ];
+
+      let currentGuideRow = 5;
+      guideData.forEach(rowVal => {
+        const row = wsGuide.getRow(currentGuideRow);
+        row.values = rowVal;
+        row.height = 20;
+
+        const cellA = row.getCell(1);
+        const cellB = row.getCell(2);
+        const cellC = row.getCell(3);
+
+        // Topic formatting
+        if (rowVal[0]) {
+          cellA.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1F2937' } };
+          cellA.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
+          cellA.alignment = { vertical: 'middle', horizontal: 'left' };
+          cellA.border = {
+            top: { style: 'thin', color: { argb: 'FF9CA3AF' } },
+            bottom: { style: 'thin', color: { argb: 'FF9CA3AF' } }
+          };
+        } else {
+          cellA.border = {};
+        }
+
+        // Rules & Examples formatting
+        if (rowVal[1] || rowVal[2]) {
+          cellB.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF4B5563' } };
+          cellB.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+          cellB.border = borderThin;
+
+          cellC.font = { name: 'Segoe UI', size: 10, italic: true, color: { argb: 'FF047857' } };
+          cellC.alignment = { vertical: 'middle', horizontal: 'left' };
+          cellC.border = borderThin;
+        }
+
+        currentGuideRow++;
+      });
+
+      // Build and Download file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'Template_Import_PettyCash.xlsx';
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Gagal membuat template: ' + err.message);
+    }
   };
 
   const handleAddRow = () => {
