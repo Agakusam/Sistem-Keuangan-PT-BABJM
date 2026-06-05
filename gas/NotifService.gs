@@ -13,6 +13,25 @@ var TELEGRAM_API = 'https://api.telegram.org/bot';
  * @param {string} text
  * @param {Object} [keyboard] Inline keyboard markup
  */
+function getDefaultKeyboard() {
+  return {
+    keyboard: [
+      [
+        { text: '🟢 Kas Masuk' },
+        { text: '🔴 Kas Keluar' },
+        { text: '📋 Catat Bon' }
+      ],
+      [
+        { text: '🔍 Pantau Bon' },
+        { text: '💳 Cek Saldo' },
+        { text: '📊 Rekap' }
+      ]
+    ],
+    resize_keyboard: true,
+    one_time_keyboard: false
+  };
+}
+
 function sendTelegramMessage(chatId, text, keyboard) {
   var token = getTelegramBotToken();
   if (!token) { Logger.log('Bot token belum diset'); return; }
@@ -26,6 +45,8 @@ function sendTelegramMessage(chatId, text, keyboard) {
 
   if (keyboard) {
     payload.reply_markup = JSON.stringify(keyboard);
+  } else {
+    payload.reply_markup = JSON.stringify(getDefaultKeyboard());
   }
 
   var options = {

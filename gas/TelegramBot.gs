@@ -34,10 +34,51 @@ function handleTelegramMessage(message) {
   var from = message.from || {};
   var username = from.first_name || from.username || 'User';
 
+  var textLower = text.toLowerCase();
+  var isCommandButton = (
+    textLower === '🟢 kas masuk' || textLower === 'kas masuk' ||
+    textLower === '🔴 kas keluar' || textLower === 'kas keluar' ||
+    textLower === '📋 catat bon' || textLower === 'catat bon' ||
+    textLower === '🔍 pantau bon' || textLower === 'pantau bon' ||
+    textLower === '💳 cek saldo' || textLower === 'cek saldo' ||
+    textLower === '📊 rekap' || textLower === 'rekap'
+  );
+
   // Cek state (apakah sedang dalam flow guided input)
   var state = getState(chatId);
   if (state && !text.startsWith('/')) {
-    return handleStateInput(chatId, text, state, username);
+    if (isCommandButton) {
+      clearState(chatId);
+      state = null;
+    } else {
+      return handleStateInput(chatId, text, state, username);
+    }
+  }
+
+  // Pre-process button commands
+  if (textLower === '🟢 kas masuk' || textLower === 'kas masuk') {
+    setState(chatId, { flow: 'kas', step: 'deskripsi', jenis: 'DEBIT' });
+    sendTelegramMessage(chatId, '🟢 <b>KAS MASUK (DEBIT)</b>\n\n📝 Ketik <b>deskripsi</b> transaksi:');
+    return;
+  }
+  if (textLower === '🔴 kas keluar' || textLower === 'kas keluar') {
+    setState(chatId, { flow: 'kas', step: 'deskripsi', jenis: 'KREDIT' });
+    sendTelegramMessage(chatId, '🔴 <b>KAS KELUAR (KREDIT)</b>\n\n📝 Ketik <b>deskripsi</b> transaksi:');
+    return;
+  }
+  if (textLower === '📋 catat bon' || textLower === 'catat bon') {
+    setState(chatId, { flow: 'bon', step: 'deskripsi' });
+    sendTelegramMessage(chatId, '📋 <b>Pencatatan Bon Baru</b>\n\n📝 Ketik <b>deskripsi/keterangan</b> bon:');
+    return;
+  }
+  if (textLower === '🔍 pantau bon' || textLower === 'pantau bon') {
+    return handleMonitor(chatId);
+  }
+  if (textLower === '💳 cek saldo' || textLower === 'cek saldo') {
+    return handleSaldo(chatId);
+  }
+  if (textLower === '📊 rekap' || textLower === 'rekap') {
+    return handleRekap(chatId, '/rekap');
   }
 
   // Command routing
