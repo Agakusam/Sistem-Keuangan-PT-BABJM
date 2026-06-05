@@ -299,14 +299,14 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
           tanggal: headers.findIndex(h => h.includes('tanggal')),
           tgl_nota: headers.findIndex(h => h.includes('nota')),
           akun: headers.findIndex(h => h.includes('akun')),
-          keterangan_debit: headers.findIndex(h => h.includes('keterangan debit')),
-          keterangan_kredit: headers.findIndex(h => h === 'keterangan' || h.includes('keterangan kredit') || h.includes('keterangan_kredit')),
-          pic: headers.findIndex(h => h === 'pic'),
+          keterangan_debit: headers.findIndex(h => h.includes('keterangan') && h.includes('debit')),
+          keterangan_kredit: headers.findIndex(h => (h.includes('keterangan') || h.trim() === 'keterangan') && !h.includes('debit')),
+          pic: headers.findIndex(h => h.includes('pic')),
           no_id: headers.findIndex(h => h.includes('id')),
-          debit: headers.findIndex(h => h === 'debit'),
-          kredit: headers.findIndex(h => h === 'kredit'),
-          tgl_penagihan: headers.findIndex(h => h.includes('penagihan')),
-          lampiran: headers.findIndex(h => h.includes('lampiran'))
+          debit: headers.findIndex(h => h.includes('debit')),
+          kredit: headers.findIndex(h => h.includes('kredit')),
+          tgl_penagihan: headers.findIndex(h => h.includes('penagihan') || h.includes('tagih')),
+          lampiran: headers.findIndex(h => h.includes('lampiran') || h.includes('link'))
         };
 
         const parsedList = [];
@@ -366,13 +366,60 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
       ["PT BABJM"],
       ["LAPORAN PETTY CASH"],
       [],
-      ["Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan", "PIC", "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan", "Lampiran"],
+      [
+        "Tanggal (* Wajib)", 
+        "Tgl. Nota (Opsional)", 
+        "Akun (Opsional)", 
+        "Keterangan Debit (* Wajib jika ada Debit)", 
+        "Keterangan Kredit (* Wajib jika ada Kredit)", 
+        "PIC (Opsional)", 
+        "NO. ID (Opsional)", 
+        "Debit (nominal)", 
+        "Kredit (nominal)", 
+        "Saldo Akhir (Abaikan)", 
+        "Tgl. Penagihan (Opsional)", 
+        "Lampiran (Opsional)"
+      ],
       ["2026-06-05", "", "", "Pengisian Kas Masuk", "", "Fita", "", "5500000", "", "", "", ""],
       ["2026-06-05", "05-Jun-26", "", "", "Beli Konsumsi Rapat Kantor", "Budiman", "", "", "120000", "", "", ""]
     ];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Create detailed guideline sheet
+    const wsGuideData = [
+      ["PANDUAN PENGISIAN TEMPLATE IMPORT KAS KECIL - PT BABJM"],
+      [],
+      ["1. KETENTUAN UMUM KOLOM"],
+      ["   - Kolom dengan keterangan (*) Wajib adalah kolom wajib diisi."],
+      ["   - Kolom yang mutlak wajib untuk semua transaksi: Tanggal."],
+      ["   - Saldo Akhir tidak perlu diisi (akan dihitung secara otomatis oleh sistem)."],
+      [],
+      ["2. ATURAN TRANSAKSI MASUK (DEBIT)"],
+      ["   - Kolom Debit diisi nominal angka saja (tanpa Rp, titik, atau koma). Contoh: 5500000"],
+      ["   - Kolom Keterangan Debit WAJIB diisi penjelasan transaksi masuk."],
+      ["   - Kolom Kredit dan Keterangan Kredit harus dikosongkan."],
+      [],
+      ["3. ATURAN TRANSAKSI KELUAR (KREDIT)"],
+      ["   - Kolom Kredit diisi nominal angka saja (tanpa Rp, titik, atau koma). Contoh: 120000"],
+      ["   - Kolom Keterangan Kredit WAJIB diisi penjelasan transaksi keluar."],
+      ["   - Kolom Debit dan Keterangan Debit harus dikosongkan."],
+      [],
+      ["4. FORMAT KOLOM TANGGAL"],
+      ["   - Gunakan format tanggal: YYYY-MM-DD (contoh: 2026-06-05) atau DD-MM-YYYY (contoh: 05-06-2026)."],
+      [],
+      ["5. KOLOM OPSIONAL LAINNYA"],
+      ["   - Tgl. Nota: Tanggal pada nota fisik (format tanggal)."],
+      ["   - Akun: Kode akun akuntansi jika ada."],
+      ["   - PIC: Nama penanggung jawab transaksi."],
+      ["   - NO. ID: Nomor nota/kuitansi/nomor eproc."],
+      ["   - Tgl. Penagihan: Tanggal tagihan ditagih."],
+      ["   - Lampiran: Link/URL ke berkas nota (Google Drive, dll)."]
+    ];
+    const wsGuide = XLSX.utils.aoa_to_sheet(wsGuideData);
+    
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Cash_log");
+    XLSX.utils.book_append_sheet(wb, wsGuide, "Panduan_Pengisian");
     XLSX.writeFile(wb, "Template_Import_PettyCash.xlsx");
   };
 
@@ -456,8 +503,32 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
   }, { valid: 0, invalid: 0 });
 
   return (
-    <div className="modal-overlay" style={{ display: 'flex' }}>
-      <div className="modal-content glass-card" style={{ maxWidth: '95%', width: '1200px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.65)',
+      backdropFilter: 'blur(10px)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+      padding: '1rem'
+    }}>
+      <div className="modal-content glass-card" style={{ 
+        maxWidth: '95%', 
+        width: '1200px', 
+        maxHeight: '90vh', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        padding: '1.5rem',
+        background: 'var(--bg-card)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-2xl)'
+      }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
           <h3 style={{ margin: 0 }}>Import Laporan Kas (Cash_log)</h3>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
