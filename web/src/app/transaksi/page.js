@@ -173,48 +173,47 @@ export default function TransaksiPage() {
 
       // Set Column widths
       worksheet.columns = [
-        { key: 'tanggal', width: 18 },
-        { key: 'tgl_nota', width: 15 },
-        { key: 'akun', width: 12 },
-        { key: 'keterangan_debit', width: 35 },
-        { key: 'keterangan_kredit', width: 35 },
-        { key: 'pic', width: 15 },
-        { key: 'no_id', width: 22 },
-        { key: 'debit', width: 20 },
-        { key: 'kredit', width: 20 },
-        { key: 'saldo_akhir', width: 22 },
-        { key: 'tgl_penagihan', width: 18 },
-        { key: 'lampiran', width: 25 }
+        { key: 'tanggal', width: 14 },
+        { key: 'tgl_nota', width: 14 },
+        { key: 'akun', width: 9 },
+        { key: 'keterangan_debit', width: 5 },  // acting as tab indent margin
+        { key: 'keterangan_kredit', width: 42 }, // main description area
+        { key: 'pic', width: 14 },
+        { key: 'no_id', width: 18 },
+        { key: 'debit', width: 18 },
+        { key: 'kredit', width: 18 },
+        { key: 'saldo_akhir', width: 20 },
+        { key: 'tgl_penagihan', width: 15 }
       ];
 
-      // Banner Title A2:L2
-      worksheet.mergeCells('A2:L2');
+      // Banner Title A2:K2
+      worksheet.mergeCells('A2:K2');
       const titleCell = worksheet.getCell('A2');
       titleCell.value = 'PT BERKAH AMANAH BERSAMA JAYA MAKMUR (PT BABJM)';
       titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
       titleCell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FF107C41' }
+        fgColor: { argb: 'FF107C41' } // Professional Excel Green
       };
       titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
-      // Subtitle A3:L3
-      worksheet.mergeCells('A3:L3');
+      // Subtitle A3:K3
+      worksheet.mergeCells('A3:K3');
       const subtitleCell = worksheet.getCell('A3');
       subtitleCell.value = `LAPORAN PETTY CASH (PERIODE: ${formatDate(startDate)} s/d ${formatDate(endDate)})`;
       subtitleCell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF107C41' } };
       subtitleCell.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FFE1F0E7' }
+        fgColor: { argb: 'FFE1F0E7' } // Light Green
       };
       subtitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
 
-      // Headers row 5
+      // Headers row 5 (Columns A to K)
       const headers = [
         "Tanggal", "Tgl. Nota", "Akun", "Keterangan Debit", "Keterangan", "PIC", 
-        "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan", "Lampiran"
+        "NO. ID", "Debit", "Kredit", "Saldo Akhir", "Tgl. Penagihan"
       ];
       
       const headerRow = worksheet.getRow(5);
@@ -236,6 +235,21 @@ export default function TransaksiPage() {
         };
       });
 
+      // Merge Column D and E headers into "Keterangan"
+      worksheet.mergeCells('D5:E5');
+      const mergedHeader = worksheet.getCell('D5');
+      mergedHeader.value = 'Keterangan';
+      mergedHeader.border = {
+        top: { style: 'thin', color: { argb: 'FF0D5F32' } },
+        left: { style: 'thin', color: { argb: 'FF0D5F32' } },
+        bottom: { style: 'medium', color: { argb: 'FF0D5F32' } }
+      };
+      worksheet.getCell('E5').border = {
+        top: { style: 'thin', color: { argb: 'FF0D5F32' } },
+        right: { style: 'thin', color: { argb: 'FF0D5F32' } },
+        bottom: { style: 'medium', color: { argb: 'FF0D5F32' } }
+      };
+
       const borderThin = {
         top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
         left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
@@ -254,7 +268,6 @@ export default function TransaksiPage() {
         const account = t.akun || '';
         const pic = t.pic || '';
         const noId = t.no_id || '';
-        const lampiran = t.lampiran || '';
         
         const debVal = t.debit_value > 0 ? t.debit_value : null;
         const kreVal = t.kredit_value > 0 ? t.kredit_value : null;
@@ -274,14 +287,29 @@ export default function TransaksiPage() {
           debVal,
           kreVal,
           salVal,
-          tglPenagihanStr,
-          lampiran
+          tglPenagihanStr
         ];
 
-        for (let c = 1; c <= 12; c++) {
+        for (let c = 1; c <= 11; c++) {
           const cell = row.getCell(c);
           cell.font = { name: 'Segoe UI', size: 10 };
-          cell.border = borderThin;
+
+          // Clear middle border between D (4) and E (5) to visually look like one column
+          if (c === 4) {
+            cell.border = {
+              top: borderThin.top,
+              bottom: borderThin.bottom,
+              left: borderThin.left
+            };
+          } else if (c === 5) {
+            cell.border = {
+              top: borderThin.top,
+              bottom: borderThin.bottom,
+              right: borderThin.right
+            };
+          } else {
+            cell.border = borderThin;
+          }
 
           // Alignment & Formatting
           if (c === 1 || c === 2 || c === 3 || c === 6 || c === 7 || c === 11) {
