@@ -17,7 +17,7 @@ doc.pipe(stream);
 const COLOR_PRIMARY = '#1A73E8'; // Professional Blue
 const COLOR_SECONDARY = '#2D3748'; // Dark charcoal
 const COLOR_MUTED = '#718096'; // Cool gray
-const COLOR_LIGHT = '#F7FAFC'; // Very light gray
+const COLOR_LIGHT = '#F8FAFC'; // Very light gray
 const COLOR_BORDER = '#E2E8F0'; // Border light gray
 const COLOR_DEBIT = '#275623'; // Dark green
 const COLOR_KREDIT = '#C00000'; // Dark red
@@ -34,15 +34,15 @@ function addHeading1(text) {
 }
 
 function addHeading2(text) {
-  doc.moveDown(1.5);
-  doc.fillColor(COLOR_SECONDARY).font('Helvetica-Bold').fontSize(14).text(text);
-  doc.moveDown(0.5);
+  doc.moveDown(1.2);
+  doc.fillColor(COLOR_SECONDARY).font('Helvetica-Bold').fontSize(13).text(text);
+  doc.moveDown(0.4);
 }
 
 function addHeading3(text) {
-  doc.moveDown(1);
-  doc.fillColor(COLOR_SECONDARY).font('Helvetica-Bold').fontSize(11).text(text);
-  doc.moveDown(0.5);
+  doc.moveDown(0.8);
+  doc.fillColor(COLOR_SECONDARY).font('Helvetica-Bold').fontSize(10).text(text);
+  doc.moveDown(0.3);
 }
 
 // Helper for standard paragraph
@@ -51,7 +51,7 @@ function addParagraph(text) {
     align: 'justify',
     lineGap: 3
   });
-  doc.moveDown(0.8);
+  doc.moveDown(0.6);
 }
 
 // Helper for bullet points
@@ -77,12 +77,12 @@ function addCodeBlock(code) {
   doc.rect(50, startY, 495, height).fill(COLOR_LIGHT);
   
   // Draw text over background
-  doc.fillColor('#1A202C').text(code, 50 + padding, startY + padding, {
+  doc.fillColor('#2D3748').text(code, 50 + padding, startY + padding, {
     width: 495 - (padding * 2)
   });
   
   doc.y = startY + height;
-  doc.moveDown(0.8);
+  doc.moveDown(0.6);
 }
 
 // Helper for note/callout box
@@ -121,7 +121,7 @@ function addCalloutBox(title, text, type = 'info') {
   });
   
   doc.y = startY + height;
-  doc.moveDown(0.8);
+  doc.moveDown(0.6);
 }
 
 // ─── COVER PAGE ─────────────────────────────
@@ -132,17 +132,24 @@ doc.rect(0, 150, 595.28, 15).fill(COLOR_PRIMARY);
 
 // Title Box
 doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(26).text('MANUAL BOOK', 50, 240);
-doc.fontSize(18).text('PANDUAN EKOSISTEM PETTY CASH & KASBON', 50, 280);
+doc.fontSize(18).text('PANDUAN OPERASIONAL PETTY CASH & KASBON', 50, 280);
 
-doc.fillColor('#A0AEC0').font('Helvetica').fontSize(12).text('Sistem Informasi Manajemen Keuangan Petty Cash (Kas_log)\ndan Piutang Karyawan (Bon) Terintegrasi Google Sheet & Telegram Bot', 50, 315, {
+doc.fillColor('#A0AEC0').font('Helvetica').fontSize(12).text('Panduan Lengkap Penggunaan Aplikasi Keuangan Petty Cash (Kas_log)\ndan Piutang Karyawan (Bon) PT BABJM Terintegrasi Website & Telegram Bot', 50, 315, {
   lineGap: 4
 });
+
+// Link Box in Cover Page
+doc.rect(50, 420, 495, 110).fill('#2D3748');
+doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(10).text('TAUTAN AKSES EKOSISTEM (PENGGUNAAN AKTIF):', 65, 435);
+doc.fillColor(COLOR_PRIMARY).font('Courier-Bold').fontSize(10).text('Aplikasi Website: https://petty-cash-babjm.vercel.app', 65, 455);
+doc.text('Telegram Bot    : https://t.me/BABJM_PettyCash_bot', 65, 475);
+doc.fillColor('#A0AEC0').font('Helvetica-Oblique').fontSize(9).text('Catatan: Telegram Bot dapat dicari dengan username @BABJM_PettyCash_bot', 65, 500);
 
 // Meta Box at bottom
 doc.rect(50, 620, 495, 120).fill('#2D3748');
 doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(11).text('KEPEMILIKAN SISTEM & HAK CIPTA:', 65, 635);
 doc.font('Helvetica').fontSize(10).text('PT BERKAH AMANAH BERSAMA JAYA MAKMUR (PT BABJM)', 65, 655);
-doc.fillColor('#A0AEC0').fontSize(9).text('Pengembangan Aplikasi: Next.js Frontend | Google Apps Script Backend\nVersi Manual: v1.0.0 (Revisi Juni 2026)', 65, 680, { lineGap: 3 });
+doc.fillColor('#A0AEC0').fontSize(9).text('Pengembangan Aplikasi: Next.js Frontend | Google Apps Script Backend\nVersi Manual: v1.1.0 (Revisi Operasional & User Guide - Juni 2026)', 65, 680, { lineGap: 3 });
 
 // ─── PAGE 2: TABLE OF CONTENTS ──────────────
 doc.addPage();
@@ -152,13 +159,13 @@ doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke(COLOR_PRIMARY);
 doc.moveDown(1.5);
 
 const toc = [
-  { title: '1. Pendahuluan & Gambaran Umum Ekosistem', page: 3 },
-  { title: '2. Next.js Web Application (Dashboard & Menu Utama)', page: 4 },
-  { title: '3. Manajemen Transaksi Kas (Petty Cash Ledger)', page: 5 },
-  { title: '4. Panduan Ekspor & Impor Excel (Auto-fit, Legends, Overflow)', page: 6 },
-  { title: '5. Manajemen Bon Karyawan (Piutang Kasbon)', page: 7 },
-  { title: '6. Integrasi Telegram Bot (Quick Button & Chat Commands)', page: 8 },
-  { title: '7. Cron Jobs Otomatis & Notifikasi Sistem', page: 10 }
+  { title: '1. Pendahuluan & Tautan Akses Sistem', page: 3 },
+  { title: '2. Pengoperasian Aplikasi Web (Dashboard & Integrasi)', page: 4 },
+  { title: '3. Pencatatan & Rekonsiliasi Transaksi Kas (Ledger)', page: 5 },
+  { title: '4. Ekspor dan Impor Excel (Auto-fit, Legends, Overflow)', page: 6 },
+  { title: '5. Manajemen Kasbon Karyawan (Alur Pertanggungjawaban)', page: 7 },
+  { title: '6. Penggunaan Telegram Bot (Guided Flow & Chat Commands)', page: 8 },
+  { title: '7. Alur Cepat Kelunasan Bon & Pengingat Otomatis', page: 10 }
 ];
 
 toc.forEach(item => {
@@ -175,130 +182,151 @@ toc.forEach(item => {
 
 
 // ─── PAGE 3: PENDAHULUAN ────────────────────
-addHeading1('1. Pendahuluan & Gambaran Umum Ekosistem');
-addParagraph('Ekosistem petty cash dan kasbon PT BERKAH AMANAH BERSAMA JAYA MAKMUR (PT BABJM) dirancang untuk memberikan kemudahan pencatatan, transparansi, serta validasi transaksi secara real-time. Ekosistem ini menggabungkan kemudahan entri data, sistem database cloud yang andal, dan aksesibilitas pesan singkat melalui Telegram.');
+addHeading1('1. Pendahuluan & Tautan Akses Sistem');
+addParagraph('Selamat datang di panduan operasional ekosistem keuangan PT BERKAH AMANAH BERSAMA JAYA MAKMUR (PT BABJM). Ekosistem ini dirancang khusus untuk mempermudah administrasi kas kecil (petty cash) dan piutang kasbon karyawan secara real-time, transparan, dan terintegrasi penuh.');
 
-addHeading2('Struktur Utama Ekosistem:');
-addBullet('Frontend Web App (Next.js):', ' Aplikasi antarmuka modern yang berjalan di browser, digunakan oleh admin keuangan untuk memantau rekap visual, melakukan filter transaksi, mencetak laporan PDF, melakukan pengeditan bulk (grid mode), serta mengimpor dan mengekspor data Excel secara profesional.');
-addBullet('Backend API (Google Apps Script / GAS):', ' Berfungsi sebagai mesin utama (backend) yang berjalan secara serverless di infrastruktur Google Cloud, menjembatani pertukaran data antara aplikasi web, database Google Sheets, dan Telegram Bot.');
-addBullet('Database Cloud (Google Sheets):', ' Digunakan sebagai basis data utama yang menyimpan seluruh histori transaksi Kas_log (Petty Cash) dan Bon (Kasbon). Database ini terstruktur dengan formula otomatis untuk menjamin akurasi saldo akhir berkelanjutan.');
-addBullet('Telegram Bot (BABJM Petty Cash Bot):', ' Bot interaktif untuk entri cepat transaksi kas (masuk/keluar) serta kasbon langsung melalui aplikasi Telegram. Bot ini dilengkapi dengan guided form (terpandu) dan auto-reminders untuk penagihan kasbon overdue.');
+addParagraph('Sistem ini terdiri dari dua antarmuka utama yang saling terhubung ke database terpusat (Google Sheets): Aplikasi Website untuk manajemen visual penuh, dan Telegram Bot untuk kemudahan operasional cepat di lapangan.');
 
-addCalloutBox('Penting untuk Pengguna Baru', 'Sistem ini menggunakan metode Single-Source of Truth yang berpusat pada Google Sheets. Perubahan data di web app maupun Telegram Bot akan langsung memperbarui Google Sheet secara seketika (real-time). Hindari mengubah formula saldo akhir pada Google Sheets secara manual agar tidak terjadi inkonsistensi data.', 'info');
+addHeading2('Tautan Akses Aktif Sistem:');
+addParagraph('Silakan gunakan tautan berikut untuk membuka dan menjalankan operasional sistem:');
+
+addCalloutBox('Aplikasi Website Utama', 'Tautan: https://petty-cash-babjm.vercel.app\nDigunakan oleh staf admin keuangan untuk melihat rekapitulasi, memfilter data, melakukan edit massal, mencetak laporan fisik, serta ekspor-impor Excel.', 'info');
+
+addCalloutBox('BABJM Petty Cash Telegram Bot', 'Tautan: https://t.me/BABJM_PettyCash_bot\nUsername: @BABJM_PettyCash_bot\nDigunakan oleh seluruh karyawan dan pimpinan untuk input cepat kas masuk/keluar, kasbon baru, cek saldo, dan memantau status kasbon outstanding.', 'debit');
+
+addHeading2('Mengapa Menggunakan Sistem Ini?');
+addBullet('Pencatatan Real-time:', ' Data yang dimasukkan melalui web maupun Telegram langsung tersimpan di Google Sheets secara seketika.');
+addBullet('Akurasi Saldo Berkelanjutan:', ' Sistem menghitung saldo akhir kas kecil secara otomatis tanpa risiko kesalahan hitung manual.');
+addBullet('Pengingat Otomatis:', ' Karyawan yang belum menyelesaikan kasbon akan mendapatkan tagihan pengingat harian secara otomatis di Telegram.');
 
 
 // ─── PAGE 4: WEB APPLICATION ────────────────
-addHeading1('2. Next.js Web Application (Dashboard & Menu)');
-addParagraph('Aplikasi web Next.js adalah pusat komando bagi Admin Petty Cash. Di sinilah semua ringkasan dan kendali administratif dilakukan secara visual.');
+addHeading1('2. Pengoperasian Aplikasi Web (Dashboard & Integrasi)');
+addParagraph('Aplikasi web Next.js adalah pusat kendali utama bagi staf keuangan. Di halaman ini, seluruh data transaksi kas kecil dan kasbon dapat dipantau dan dikelola secara menyeluruh.');
 
-addHeading2('Struktur Navigasi Utama:');
-addBullet('Dashboard (Beranda):', ' Halaman utama yang langsung menampilkan saldo kas kecil saat ini, grafik ringkasan net income bulanan (Debit vs Kredit), status ringkasan bon aktif, serta ringkasan transaksi terbaru.');
-addBullet('Transaksi:', ' Lembar kerja ledger kas kecil. Halaman ini digunakan untuk melihat, memfilter, mencari, mencetak, mengedit secara massal, serta melakukan ekspor-impor data dengan berkas Excel.');
-addBullet('Bon:', ' Daftar piutang kasbon karyawan yang belum lunas beserta status warning (mendekati batas waktu) dan overdue (melebihi batas waktu 14 hari).');
-addBullet('Pengaturan:', ' Digunakan untuk menyinkronkan token Telegram Bot, Chat ID tujuan, URL GAS, API key, serta memuat data parameter sistem.');
+addHeading2('Fitur Menu Utama Aplikasi Web:');
+addBullet('Dashboard (Halaman Utama):', ' Menampilkan saldo kas kecil aktif saat ini secara real-time. Dilengkapi dengan grafik grafik bulanan pengeluaran vs pemasukan (Debit vs Kredit) serta ringkasan jumlah kasbon luar (outstanding) berdasarkan statusnya.');
+addBullet('Transaksi (Kas_log):', ' Lembar buku besar kas kecil. Di halaman ini admin dapat melakukan filter berdasarkan rentang tanggal, mencari deskripsi transaksi, melakukan impor dari Excel, ekspor laporan Excel, dan mencetak laporan kas.');
+addBullet('Bon (Kasbon):', ' Halaman khusus pelacakan pinjaman sementara karyawan. Admin dapat mencatat bon baru, memantau batas jatuh tempo, dan memproses pelunasan bon saat nota belanja diserahkan.');
+addBullet('Pengaturan:', ' Tempat mengonfigurasi API, token Telegram Bot, Chat ID grup notifikasi, PIN keamanan website, dan nama penandatangan laporan ekspor.');
 
-addHeading2('Mengakses Aplikasi:');
-addParagraph('Aplikasi ini dapat diakses secara lokal oleh developer menggunakan perintah npm run dev atau di-deploy secara komersial menggunakan layanan Vercel. Kredensial URL backend dikonfigurasi melalui variabel lingkungan NEXT_PUBLIC_GAS_URL.');
-
-
-// ─── PAGE 5: MANAJEMEN TRANSAKSI ─────────────
-addHeading1('3. Manajemen Transaksi Kas (Petty Cash Ledger)');
-addParagraph('Transaksi kas dicatat dalam tabel dinamis di halaman Transaksi. Berikut adalah panduan cara melakukan pencatatan dan pengelolaan transaksi kas.');
-
-addHeading2('1. Pencatatan Transaksi Tunggal:');
-addParagraph('Klik tombol "Transaksi Baru" di pojok kanan atas halaman Transaksi. Sebuah formulir interaktif akan muncul. Isi data dengan ketentuan berikut:');
-addBullet('Tanggal Transaksi & Tanggal Nota:', ' Tanggal pencatatan kas dan tanggal fisik bukti nota belanja.');
-addBullet('Akun Pengeluaran:', ' Pilih akun/kategori transaksi (misalnya ATK, Operasional, Konsumsi, dll.).');
-addBullet('Jenis Kas:', ' Pilih Debit jika kas masuk (misal pengisian kas dari kantor pusat) atau Kredit jika kas keluar.');
-addBullet('Nominal:', ' Masukkan angka tanpa simbol mata uang (sistem akan otomatis memformatnya menjadi Rupiah).');
-addBullet('Keterangan:', ' Deskripsi detail kegunaan pengeluaran/penerimaan.');
-
-addHeading2('2. Pencatatan Massal (Grid Mode):');
-addParagraph('Admin dapat mengedit beberapa transaksi sekaligus secara langsung menggunakan antarmuka mirip Excel. Pilih baris-baris transaksi yang ingin diubah dengan mencentang kotak di kiri tabel, lalu klik tombol "Edit Grid Mode" di baris aksi melayang di bagian bawah layar. Anda dapat mengubah data langsung di dalam sel, lalu menekan simpan.');
+addHeading2('Cara Membaca Metrik Keuangan di Dashboard:');
+addParagraph('Saat Anda membuka Dashboard web, perhatikan tiga kartu ringkasan utama:\n'
+  + '1. Saldo Kas Aktif: Menunjukkan sisa dana fisik yang harus ada di brankas kas kecil.\n'
+  + '2. Netto Bulan Ini: Selisih antara total kas masuk (Debit) dan kas keluar (Kredit) dalam bulan berjalan.\n'
+  + '3. Status Kasbon: Memberikan indikasi cepat apakah ada kasbon yang sudah mendekati jatuh tempo (Warning) atau telah melebihi batas 14 hari (Overdue) sehingga memerlukan tindakan penagihan.');
 
 
-// ─── PAGE 6: PANDUAN EKSPOR IMPOR ────────────
-addHeading1('4. Panduan Ekspor & Impor Excel');
-addParagraph('Untuk mempermudah administrasi berskala besar, sistem dilengkapi dengan fitur impor templat Excel serta ekspor laporan Excel berstandar tinggi.');
+// ─── PAGE 5: PENCATATAN TRANSAKSI ─────────────
+addHeading1('3. Pencatatan & Rekonsiliasi Transaksi Kas (Ledger)');
+addParagraph('Halaman Transaksi kas kecil menyediakan dua metode pencatatan transaksi: entri satu per satu melalui formulir interaktif, dan entri massal menggunakan Excel Grid Mode.');
 
-addHeading2('1. Impor dari Templat Excel:');
-addParagraph('Klik tombol "Import" pada toolbar transaksi. Anda dapat mengunduh templat resmi yang sudah dirancang khusus. Templat ini memiliki sheet panduan dan sheet pengisian dengan kode warna indikator:');
-addBullet('Merah (Wajib):', ' Kolom Tanggal wajib diisi.');
-addBullet('Kuning (Kondisional):', ' Kolom Keterangan Debit & Debit wajib diisi jika jenisnya Kas Masuk. Kolom Keterangan & Kredit wajib diisi jika Kas Keluar.');
-addBullet('Biru (Opsional):', ' Kolom Tgl. Nota, Akun, PIC, No. ID, dan Tgl. Penagihan bersifat opsional.');
-addBullet('Abu-abu (Otomatis):', ' Saldo Akhir akan dihitung otomatis oleh sistem, tidak perlu diisi manual.');
+addHeading2('1. Entri Transaksi Tunggal (Formulir Website):');
+addParagraph('Klik tombol "+ Transaksi Baru" di pojok kanan atas halaman Transaksi. Isi formulir dengan data transaksi keuangan yang valid:');
+addBullet('Tanggal Transaksi & Tgl. Nota:', ' Tanggal uang dikeluarkan/diterima dan tanggal yang tertera pada bukti nota belanja fisik.');
+addBullet('Akun Pengeluaran:', ' Kategori akun akuntansi (misalnya ATK, Operasional Kantor, Konsumsi Rapat, Logistik, dll.).');
+addBullet('Jenis Kas:', ' Pilih Debit untuk transaksi kas masuk (misal pengisian ulang dana dari kantor pusat). Pilih Kredit untuk transaksi kas keluar (pengeluaran operasional).');
+addBullet('Nominal & Keterangan:', ' Masukkan angka nominal bersih (misal 500000) dan berikan deskripsi detail kegunaan transaksi.');
 
-addHeading2('2. Ekspor ke Excel:');
-addParagraph('Klik tombol "Export" untuk mengunduh laporan Excel. Laporan yang diunduh langsung diformat secara profesional:');
-addBullet('Auto-fit Column Width:', ' Semua lebar kolom dihitung otomatis berdasarkan panjang nilai terformat sehingga tidak akan ada teks terpotong atau kode error ###.');
-addBullet('Visual Indentation Uraian:', ' Kolom Keterangan Debit (E) dipersempit (lebar 12). Jika berisi data, teks akan meluber secara alami ke kolom Keterangan Kredit (F) yang kosong karena sel kosong diisi dengan null. Hal ini memberikan efek indentasi visual yang rapi.');
-addBullet('Total di Tengah (E4:F5):', ' Total Debit dan Kredit diletakkan di baris 4 & 5 kolom E (Label) & F (Nilai) dengan warna latar hijau lembut (Debit) dan merah lembut (Kredit) ber-border tipis.');
+addHeading2('2. Mode Edit Massal (Excel Grid Mode):');
+addParagraph('Jika ada beberapa baris data transaksi kas yang perlu diubah atau disesuaikan sekaligus:');
+addBullet('Langkah 1:', ' Centang kotak di sebelah kiri transaksi pada tabel transaksi yang ingin diubah.');
+addBullet('Langkah 2:', ' Klik tombol "Edit Grid Mode" yang muncul pada baris aksi melayang di bagian bawah layar.');
+addBullet('Langkah 3:', ' Seluruh data baris terpilih akan berubah menjadi kolom tabel yang dapat diedit langsung (mirip Excel). Ubah nilai sel yang diinginkan, lalu klik tombol "Simpan Perubahan".');
+
+addCalloutBox('Cetak Laporan Fisik Kas', 'Admin dapat langsung mencetak salinan fisik laporan kas kecil dengan mengeklik tombol "Cetak PDF" pada web. Tampilan cetak akan otomatis menyembunyikan elemen navigasi web dan memunculkan kotak tanda tangan pembuat (Kasir/Administrasi) dan penyetuju (Pimpinan) di bagian bawah laporan.', 'info');
 
 
-// ─── PAGE 7: MANAJEMEN BON ──────────────────
-addHeading1('5. Manajemen Bon Karyawan (Piutang Kasbon)');
-addParagraph('Kasbon adalah dana kas kecil yang dipinjam oleh karyawan (PIC) untuk keperluan dinas atau darurat dan wajib dipertanggungjawabkan dengan melampirkan nota pengeluaran asli.');
+// ─── PAGE 6: EKSPOR IMPOR EXCEL ──────────────
+addHeading1('4. Ekspor dan Impor Excel');
+addParagraph('Untuk memfasilitasi kebutuhan administrasi berskala besar, aplikasi web menyediakan fitur impor templat Excel dan ekspor berkas laporan Excel dengan format yang rapi secara otomatis.');
 
-addHeading2('Status Batas Waktu Kasbon:');
-addParagraph('Setiap bon kas baru memiliki batas pertanggungjawaban maksimal 14 hari kerja. Sistem melacak status bon ke dalam 3 tingkatan:');
-addBullet('Normal (Hari 1 s.d. 9):', ' Status aman, kasbon baru dicatat dan belum jatuh tempo.');
-addBullet('Warning (Hari 10 s.d. 13):', ' Status peringatan. Sistem menandai dengan warna kuning karena batas jatuh tempo segera habis.');
-addBullet('Overdue (Hari 14 ke atas):', ' Status jatuh tempo terlampaui. Sistem menandai dengan warna merah bold. Notifikasi peringatan penagihan harian akan dikirim otomatis ke grup Telegram.');
+addHeading2('1. Fitur Impor Excel (Unggah Data Massal):');
+addParagraph('Admin dapat mengunggah puluhan transaksi kas sekaligus dengan mengeklik tombol "Import". Gunakan berkas templat resmi yang sudah disediakan dengan mengikuti aturan kolom berkode warna:');
+addBullet('Kolom Merah (Wajib):', ' Kolom Tanggal transaksi wajib diisi.');
+addBullet('Kolom Kuning (Kondisional):', ' Untuk kas masuk, isi kolom Keterangan Debit dan nominal Debit. Untuk kas keluar, isi kolom Keterangan dan nominal Kredit.');
+addBullet('Kolom Biru (Opsional):', ' Kolom Tgl. Nota, Akun, PIC, No. ID, dan Tgl. Penagihan boleh diisi atau dikosongkan.');
+addBullet('Kolom Abu-abu (Otomatis):', ' Kolom Saldo Akhir dihitung otomatis oleh sistem, jangan diisi manual.');
 
-addHeading2('Alur Pelunasan Kasbon (Settle):');
-addParagraph('Ketika karyawan menyerahkan bukti nota belanja asli, admin mencatat pelunasan dengan menekan tombol "Lunas" di halaman Bon, mengisi nominal riil belanja, lalu menyimpan data. Selisih belanja (jika ada) akan otomatis disesuaikan menjadi transaksi kas masuk/keluar baru oleh sistem.');
+addHeading2('2. Fitur Ekspor Excel (Unduh Laporan Ledger):');
+addParagraph('Ketika admin mengeklik tombol "Export", sistem akan membuat berkas Excel laporan kas kecil terformat profesional dengan aturan khusus:');
+addBullet('Tanpa Error Truncate (###):', ' Lebar seluruh kolom mata uang (Debit, Kredit, Saldo Akhir) dihitung otomatis menyesuaikan nilai terpanjang, menjamin berkas Excel langsung siap dibaca tanpa kolom bermasalah.');
+addBullet('Total Terpusat di Baris Atas:', ' Baris Total Debit (hijau lembut) dan Total Kredit (merah lembut) diletakkan di bawah rentang tanggal tepat di tengah (Kolom E & F) lengkap dengan border tipis teratur, bukan digabung atau ditaruh di pojok.');
+addBullet('Indentasi Keterangan Visual:', ' Kolom keterangan debit diset sempit (12). Karena data kas keluar memiliki nilai null pada kolom keterangan debit, teks deskripsi kas masuk akan meluber secara visual dari kolom E ke F, menciptakan layout terindentasi rapi.');
+
+
+// ─── PAGE 7: MANAJEMEN KASBON ────────────────
+addHeading1('5. Manajemen Kasbon Karyawan (Alur Pertanggungjawaban)');
+addParagraph('Kasbon karyawan (Bon) adalah pengeluaran sementara untuk kebutuhan dinas lapangan atau operasional mendesak. Setiap kasbon wajib dilaporkan pertanggungjawabannya maksimal 14 hari setelah dicatat.');
+
+addHeading2('Siklus Pertanggungjawaban Bon (Langkah demi Langkah):');
+addBullet('Langkah 1: Pencatatan Bon Baru:', ' Admin mencatat bon baru lewat web atau Telegram dengan mengisi nama PIC karyawan, nominal bon, dan tujuan belanja.');
+addBullet('Langkah 2: Pemantauan Batas Waktu:', ' Sistem secara dinamis menghitung umur bon semenjak tanggal dicatat:\n'
+  + '  • Umur 1 s.d. 9 hari: Berstatus Normal (Aman).\n'
+  + '  • Umur 10 s.d. 13 hari: Berstatus Warning (Kuning - Segera jatuh tempo).\n'
+  + '  • Umur >= 14 hari: Berstatus Overdue (Merah Bold - Jatuh tempo terlewati).');
+addBullet('Langkah 3: Penyerahan Bukti Nota Riil (Settle):', ' Ketika karyawan mengembalikan sisa uang atau meminta penggantian dana belanja, admin mengeklik tombol "Lunas" di samping data bon bersangkutan di halaman Bon.');
+addBullet('Langkah 4: Rekonsiliasi Nominal Riil Belanja:', ' Admin memasukkan nominal belanja riil sesuai nota fisik:\n'
+  + '  • Jika Nominal Belanja = Nominal Bon: Bon langsung lunas.\n'
+  + '  • Jika Nominal Belanja < Nominal Bon (Sisa uang dikembalikan): Bon lunas, sistem otomatis membuat transaksi kas baru (Kas Masuk/Debit) sebesar selisih sisa uang yang diserahkan ke brankas kas kecil.\n'
+  + '  • Jika Nominal Belanja > Nominal Bon (Dana kurang diganti admin): Bon lunas, sistem otomatis membuat transaksi kas baru (Kas Keluar/Kredit) untuk mengganti uang nomok karyawan.');
+
+addCalloutBox('Akurasi Selisih Kasbon', 'Melalui alur penyelesaian ini, admin keuangan tidak perlu lagi mencatat transaksi selisih kasbon secara manual di ledger kas kecil. Sistem secara otomatis menyinkronkan pengembalian atau kekurangan uang belanja langsung ke database kas.', 'debit');
 
 
 // ─── PAGE 8: INTEGRASI TELEGRAM BOT ──────────
-addHeading1('6. Integrasi Telegram Bot (Quick Menu)');
-addParagraph('Telegram Bot merupakan gerbang utama bagi karyawan di lapangan maupun pimpinan untuk mengakses data kas secara cepat tanpa harus membuka komputer.');
+addHeading1('6. Penggunaan Telegram Bot (Guided Flow)');
+addParagraph('Telegram Bot (@BABJM_PettyCash_bot) dirancang sebagai alat bantu input kilat transaksi keuangan langsung dari chat room Telegram, baik lewat chat pribadi maupun grup operasional.');
 
-addHeading2('1. Tombol Menu Utama (Keyboard Buttons):');
-addParagraph('Setelah menekan perintah /start pada bot, keyboard interaktif di bagian bawah layar Telegram akan menyajikan tombol akses cepat berikut:');
-addBullet('🟢 Kas Masuk:', ' Memulai alur panduan cepat mencatat transaksi Debit.');
-addBullet('🔴 Kas Keluar:', ' Memulai alur panduan cepat mencatat transaksi Kredit.');
-addBullet('📋 Bon Baru:', ' Memulai alur panduan cepat mencatat pengajuan kasbon baru.');
-addBullet('🔍 Monitor Bon:', ' Menampilkan list bon karyawan yang berstatus belum lunas.');
-addBullet('💳 Cek Saldo:', ' Mengecek jumlah saldo petty cash aktif saat ini.');
-addBullet('📊 Rekap Transaksi:', ' Menampilkan rekap ringkas transaksi hari ini atau minggu ini.');
+addHeading2('1. Menggunakan Tombol Menu Keyboard Utama:');
+addParagraph('Setelah mengaktifkan bot dengan mengetik perintah /start, keyboard interaktif di bawah kolom input chat Telegram Anda akan menampilkan 6 tombol utama:');
+addBullet('🟢 Kas Masuk:', ' Memulai proses terbimbing untuk mencatat Kas Masuk (Debit).');
+addBullet('🔴 Kas Keluar:', ' Memulai proses terbimbing untuk mencatat Kas Keluar (Kredit).');
+addBullet('📋 Bon Baru:', ' Memulai proses terbimbing untuk membuat Kasbon karyawan baru.');
+addBullet('🔍 Monitor Bon:', ' Menampilkan daftar semua bon aktif karyawan yang belum diselesaikan.');
+addBullet('💳 Cek Saldo:', ' Menampilkan saldo petty cash terkini secara instan dari Google Sheets.');
+addBullet('📊 Rekap Transaksi:', ' Mengirimkan ringkasan transaksi kas dalam rentang waktu terdekat.');
 
-addHeading3('Flow Pengisian Cepat Kas Masuk / Kas Keluar:');
-addParagraph('Cukup klik tombol "Kas Masuk" atau "Kas Keluar", lalu ketik pesan dengan format: [Nominal] [Keterangan]. Bot mendukung pembacaan nominal dengan singkatan bahasa Indonesia umum, misalnya:');
-addCodeBlock('1.5jt Pengisian Saldo Kas Kecil\n500rb Beli ATK Kantor\n25k Parkir Logistik');
+addHeading3('Cara Mengisi Nominal dan Keterangan Cepat (Format Teks):');
+addParagraph('Setelah mengeklik menu Kas Masuk, Kas Keluar, atau Bon Baru, ketik pesan Anda dengan format: [Nominal] [Keterangan]. Bot telah dilengkapi pembaca teks cerdas yang mengenali singkatan angka nominal umum di Indonesia:');
+addBullet('Singkatan Ratusan Ribu (rb / k):', ' Contoh 250rb atau 250k dibaca otomatis oleh bot sebagai 250000.');
+addBullet('Singkatan Jutaan (jt / juta):', ' Contoh 1.5jt atau 1.5juta dibaca otomatis sebagai 1500000.');
+
+addCodeBlock('Contoh ketik pesan Kas Masuk: 1.5jt Pengisian ulang kas kecil dari kantor pusat\nContoh ketik pesan Kas Keluar: 120rb Beli konsumsi rapat internal logistik\nContoh ketik pesan Bon Baru: Rio 500k Belanja bensin mobil logistik');
 
 
 // ─── PAGE 9: TELEGRAM COMMANDS ──────────────
-addHeading1('6. Integrasi Telegram Bot (Lanjutan)');
-addParagraph('Selain tombol keyboard interaktif, pengguna terdaftar dapat menggunakan command chat manual untuk berinteraksi dengan sistem.');
+addHeading1('6. Penggunaan Telegram Bot (Lanjutan)');
+addParagraph('Bagi pengguna tingkat lanjut, bot mendukung pemicuan perintah langsung menggunakan format simbol garis miring (/) di dalam chat room.');
 
-addHeading2('Daftar Perintah Bot Lengkap:');
-addBullet('/start', ' Mengaktifkan bot Telegram dan mendaftarkan sesi chat pengguna.');
-addBullet('/help', ' Menampilkan ringkasan bantuan cara penggunaan bot.');
-addBullet('/saldo', ' Menampilkan saldo petty cash terkini secara real-time dari Google Sheet.');
-addBullet('/rekap [jumlah_baris]', ' Menampilkan rekap transaksi terakhir. Contoh: /rekap 5');
-addBullet('/monitor', ' Menampilkan daftar bon luar (outstanding) beserta status umur bon.');
-addBullet('/kas [debit/kredit] [nominal] [keterangan]', ' Mencatat kas baru dalam satu baris perintah. Contoh: /kas kredit 50rb Beli Materai');
-addBullet('/bon [nama_pic] [nominal] [keterangan]', ' Mencatat kasbon baru dalam satu baris perintah. Contoh: /bon Rio 100k Bensin Logistik');
-addBullet('/lunas [ID_BON]', ' Melunasi kasbon tertentu berdasarkan ID Bon. Contoh: /lunas BON-202606-003');
+addHeading2('Daftar Lengkap Perintah Chat (Command-based):');
+addBullet('/start', ' Mengaktifkan bot, mendaftarkan identitas chat, dan memunculkan menu tombol interaktif.');
+addBullet('/help', ' Menampilkan daftar bantuan format penulisan pesan dan perintah bot.');
+addBullet('/saldo', ' Mengecek saldo kas kecil riil saat ini (terhubung langsung ke sel Google Sheets).');
+addBullet('/rekap [jumlah]', ' Menampilkan rekap histori transaksi kas terakhir. Contoh: /rekap 5');
+addBullet('/monitor', ' Menampilkan daftar nama PIC, nominal, dan sisa hari jatuh tempo dari bon karyawan yang belum lunas.');
+addBullet('/kas [debit/kredit] [nominal] [keterangan]', ' Mencatat transaksi kas baru dalam satu pesan singkat. Contoh: /kas kredit 50rb Beli Materai Tempel');
+addBullet('/bon [nama_pic] [nominal] [keterangan]', ' Mencatat kasbon baru dalam satu pesan singkat. Contoh: /bon Fita 300k Panjar Belanja ATK');
+addBullet('/lunas [ID_BON]', ' Melunasi kasbon karyawan tertentu secara manual menggunakan kode ID Bon. Contoh: /lunas BON-202606-003');
 
-addHeading2('Pelunasan Instan Via Tautan Chat:');
-addParagraph('Ketika melakukan /monitor atau menerima notifikasi harian, bot akan mencantumkan tautan kelunasan instan di sebelah nama PIC, misalnya /lunas_BON_202606_003. Admin cukup mengeklik teks tautan biru tersebut di Telegram untuk melunasi bon tersebut tanpa perlu mengetik ulang ID secara manual.');
+addCalloutBox('Kemudahan Bagi Staf Lapangan', 'Seluruh perintah bot di atas bersifat case-insensitive (huruf besar atau kecil tidak berpengaruh). Bot akan memberikan balasan notifikasi berupa pesan konfirmasi centang hijau jika transaksi berhasil tercatat ke dalam database Google Sheets.', 'debit');
 
 
-// ─── PAGE 10: CRON JOBS & NOTIFIKASI ─────────
-addHeading1('7. Cron Jobs Otomatis & Notifikasi Sistem');
-addParagraph('Ekosistem ini dilengkapi dengan otomatisasi terjadwal yang memastikan tidak ada transaksi atau kasbon yang terlewatkan.');
+// ─── PAGE 10: ALUR CEPAT & PENGINGAT ──────────
+addHeading1('7. Alur Cepat Kelunasan Bon & Pengingat Otomatis');
+addParagraph('Untuk memastikan disiplin keuangan berjalan dengan lancar, sistem dilengkapi dengan otomatisasi alur kelunasan instan dan notifikasi terjadwal.');
 
-addHeading2('1. Pengingat Harian (Daily Overdue Reminders):');
-addParagraph('Setiap pagi pukul 08:00 WIB, pemicu waktu (Time-driven trigger) Google Apps Script akan memeriksa seluruh data kasbon. Jika ditemukan bon dengan status "Overdue" (umur bon >= 14 hari) atau "Warning" (umur bon >= 10 hari), sistem akan menyusun daftar rekapitulasi penagihan dan mengirimkannya secara otomatis ke grup Telegram default.');
+addHeading2('1. Alur Cepat Kelunasan Bon via Tautan Telegram:');
+addParagraph('Setiap kali admin menjalankan perintah /monitor atau menerima rekapitulasi harian kasbon, bot Telegram akan menyajikan daftar bon outstanding lengkap dengan tautan biru di samping nama PIC, contoh: /lunas_BON_202606_003.');
+addBullet('Kelunasan Sekali Klik:', ' Admin cukup mengetuk/mengeklik tautan biru tersebut di Telegram. Bot akan memproses pelunasan kasbon tersebut secara instan tanpa perlu mengetik ID secara manual.');
+addBullet('Rekonsiliasi Otomatis:', ' Pelunasan instan via Telegram diasumsikan nominal belanja riil sama dengan nominal bon asli. Jika ada selisih uang belanja, disarankan admin melakukan pelunasan melalui aplikasi web.');
 
-addHeading3('2. Notifikasi Kejadian Real-time:');
-addParagraph('GAS juga secara aktif mengirimkan notifikasi instan ke Telegram saat terjadi aktivitas penting di aplikasi web:');
-addBullet('Notifikasi Transaksi Baru:', ' Memberitahukan detail tanggal, jenis (Debit/Kredit), keterangan, nominal, dan saldo terkini setiap kali ada entri baru.');
-addBullet('Notifikasi Bon Baru:', ' Memberitahukan pencatatan kasbon baru lengkap dengan ID Bon, nama PIC, nominal, dan batas tenggat waktu.');
-addBullet('Notifikasi Kasbon Lunas:', ' Memberitahukan penyelesaian kasbon lengkap dengan nama PIC dan waktu penyelesaian dalam hitungan hari.');
+addHeading2('2. Pemicu Pengingat Jatuh Tempo (Cron Jobs):');
+addParagraph('Sistem ini dikonfigurasi dengan pemicu waktu harian (Time-driven trigger) Google Apps Script yang berjalan otomatis setiap pagi pukul 08:00 WIB:');
+addBullet('Pengecekan Otomatis:', ' Sistem memindai database Google Sheets mencari bon kas yang telah berstatus "Warning" (umur 10-13 hari) atau "Overdue" (umur >= 14 hari).');
+addBullet('Notifikasi Tagihan:', ' Hasil pemindaian tersebut dirangkum dalam satu daftar penagihan kasbon luar dan dikirimkan secara otomatis ke grup chat Telegram default sebagai pengingat agar PIC segera menyerahkan nota belanja fisik.');
 
-addCalloutBox('Pemeliharaan Sistem', 'Jika notifikasi berhenti berfungsi, harap periksa kembali token Telegram Bot dan Chat ID di halaman Pengaturan Aplikasi Web, dan pastikan webhook GAS tidak terblokir.', 'kredit');
+addCalloutBox('Hubungi Tim Pemeliharaan Sistem', 'Jika notifikasi transaksi atau pengingat otomatis pagi hari berhenti terkirim ke Telegram grup, silakan masuk ke menu Pengaturan di web app untuk memastikan parameter token bot dan Chat ID grup tujuan sudah terkonfigurasi dengan benar.', 'kredit');
 
 
 // ─── FOOTER & PAGINATION GENERATOR ──────────
