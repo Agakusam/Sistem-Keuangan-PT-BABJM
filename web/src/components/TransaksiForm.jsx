@@ -41,7 +41,7 @@ export default function TransaksiForm({ onSuccess }) {
   };
 
   const handleKeyDown = (e, rowIndex, field) => {
-    const colOrder = ['jenis', 'tanggal', 'keterangan', 'jumlah', 'pic', 'no_id', 'tgl_nota'];
+    const colOrder = ['jenis', 'tanggal', 'keterangan', 'jumlah', 'pic', 'no_id', 'tgl_nota', 'lampiran'];
     const currentColIndex = colOrder.indexOf(field);
 
     // Enter / ArrowDown / ArrowUp navigation
@@ -109,7 +109,7 @@ export default function TransaksiForm({ onSuccess }) {
       e.preventDefault();
       
       const rowsData = pastedText.split(/\r?\n/).map(row => row.split('\t'));
-      const colOrder = ['jenis', 'tanggal', 'keterangan', 'jumlah', 'pic', 'no_id', 'tgl_nota'];
+      const colOrder = ['jenis', 'tanggal', 'keterangan', 'jumlah', 'pic', 'no_id', 'tgl_nota', 'lampiran'];
       const startColIndex = colOrder.indexOf(colKey);
       
       if (startColIndex === -1) return;
@@ -245,6 +245,7 @@ export default function TransaksiForm({ onSuccess }) {
               <th style={{ width: '110px' }}>PIC</th>
               <th style={{ width: '110px' }}>No. ID</th>
               <th style={{ width: '130px' }}>Tgl. Nota</th>
+              <th style={{ minWidth: '200px' }}>Catatan</th>
               <th style={{ width: '45px' }}></th>
             </tr>
           </thead>
@@ -361,6 +362,19 @@ export default function TransaksiForm({ onSuccess }) {
                     onChange={e => handleCellChange(idx, 'tgl_nota', e.target.value)}
                     onKeyDown={e => handleKeyDown(e, idx, 'tgl_nota')}
                     onPaste={e => handlePaste(e, idx, 'tgl_nota')}
+                  />
+                </td>
+                <td>
+                  <input 
+                    type="text" 
+                    className="excel-input" 
+                    placeholder="Catatan" 
+                    value={row.lampiran} 
+                    data-row={idx}
+                    data-col="lampiran"
+                    onChange={e => handleCellChange(idx, 'lampiran', e.target.value)}
+                    onKeyDown={e => handleKeyDown(e, idx, 'lampiran')}
+                    onPaste={e => handlePaste(e, idx, 'lampiran')}
                   />
                 </td>
                 <td style={{ textAlign: 'center', padding: 0 }}>

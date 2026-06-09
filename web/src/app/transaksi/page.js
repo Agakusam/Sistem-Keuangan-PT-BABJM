@@ -913,10 +913,10 @@ export default function TransaksiPage() {
                   {renderHeaderWithFilter('Keterangan', 'keterangan')}
                   {renderHeaderWithFilter('PIC', 'pic')}
                   {renderHeaderWithFilter('No. ID', 'no_id')}
-                  <th className="no-print">Lampiran</th>
                   {renderHeaderWithFilter('Debit (Masuk)', 'debit')}
                   {renderHeaderWithFilter('Kredit (Keluar)', 'kredit')}
                   {renderHeaderWithFilter('Saldo Akhir', 'saldo_akhir')}
+                  <th className="no-print" style={{ minWidth: '120px' }}>Catatan</th>
                 </tr>
               </thead>
               <tbody>
@@ -954,16 +954,20 @@ export default function TransaksiPage() {
                     </td>
                     <td>{t.pic || '-'}</td>
                     <td>{t.no_id || '-'}</td>
-                    <td className="no-print">
-                      {t.lampiran ? (
-                        <a href={t.lampiran} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
-                          Lihat
-                        </a>
-                      ) : '-'}
-                    </td>
                     <td style={{ textAlign: 'right', color: 'var(--success)' }}>{t.debit !== 'Rp -' ? t.debit : ''}</td>
                     <td style={{ textAlign: 'right', color: 'var(--danger)' }}>{t.kredit !== 'Rp -' ? t.kredit : ''}</td>
                     <td style={{ textAlign: 'right', fontWeight: 600 }}>{t.saldo_akhir}</td>
+                    <td className="no-print" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {t.lampiran ? (
+                        /^https?:\/\//.test(t.lampiran) ? (
+                          <a href={t.lampiran} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
+                            Lihat
+                          </a>
+                        ) : (
+                          t.lampiran
+                        )
+                      ) : '-'}
+                    </td>
                   </tr>
                 )) : (
                   <tr>

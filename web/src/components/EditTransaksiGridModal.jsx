@@ -284,7 +284,7 @@ export default function EditTransaksiGridModal({ isOpen, onClose, selectedTransa
                 <th style={{ width: '130px' }}>Tgl. Nota</th>
                 <th style={{ width: '130px' }}>Tgl. Tagih</th>
                 <th style={{ width: '100px' }}>Akun</th>
-                <th style={{ minWidth: '200px' }}>Link Lampiran</th>
+                <th style={{ minWidth: '200px' }}>Catatan</th>
               </tr>
             </thead>
             <tbody>
@@ -425,7 +425,7 @@ export default function EditTransaksiGridModal({ isOpen, onClose, selectedTransa
                     <input 
                       type="text" 
                       className="excel-input" 
-                      placeholder="Link Lampiran" 
+                      placeholder="Catatan" 
                       value={row.lampiran} 
                       data-edit-row={idx}
                       data-edit-col="lampiran"

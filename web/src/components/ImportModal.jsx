@@ -306,7 +306,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
           debit: headers.findIndex(h => h.includes('debit') && !h.includes('keterangan') && !h.includes('ket.')),
           kredit: headers.findIndex(h => h.includes('kredit') && !h.includes('keterangan') && !h.includes('ket.')),
           tgl_penagihan: headers.findIndex(h => h.includes('penagihan') || h.includes('tagih')),
-          lampiran: headers.findIndex(h => h.includes('lampiran') || h.includes('link'))
+          lampiran: headers.findIndex(h => h.includes('lampiran') || h.includes('link') || h.includes('catatan'))
         };
 
         const parsedList = [];
@@ -483,7 +483,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
         { text: 'Kredit', type: 'conditional' },
         { text: 'Saldo Akhir', type: 'automatic' },
         { text: 'Tgl. Penagihan', type: 'optional' },
-        { text: 'Lampiran', type: 'optional' }
+        { text: 'Catatan', type: 'optional' }
       ];
 
       const headerRow = worksheet.getRow(5);
@@ -609,7 +609,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
       const guideData = [
         ['1. Ketentuan Umum', 'Kolom berwarna MERAH adalah kolom wajib diisi (tidak boleh kosong).', 'Tanggal (WAJIB)'],
         ['', 'Kolom berwarna KUNING wajib diisi bersesuaian dengan tipe transaksi (Debit atau Kredit).', 'Keterangan Debit & Keterangan (Kredit)'],
-        ['', 'Kolom berwarna BIRU adalah kolom opsional (boleh diisi atau dikosongkan).', 'Tgl. Nota, Akun, PIC, No. ID, Tgl. Penagihan, Lampiran'],
+        ['', 'Kolom berwarna BIRU adalah kolom opsional (boleh diisi atau dikosongkan).', 'Tgl. Nota, Akun, PIC, No. ID, Tgl. Penagihan, Catatan'],
         ['', 'Kolom berwarna ABU-ABU GELAP akan terisi secara otomatis oleh sistem (jangan diisi).', 'Saldo Akhir'],
         ['', '', ''],
         ['2. Transaksi Masuk (Debit)', 'Isi nominal uang pada kolom Debit (nominal). Hanya angka saja, tanpa Rp, titik, atau koma.', '5500000 (menjadi Rp 5.500.000)'],
@@ -622,7 +622,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
         ['', '', ''],
         ['4. Format Tanggal', 'Gunakan format standar internasional YYYY-MM-DD atau format Indonesia DD-MM-YYYY.', '2026-06-05 atau 05-06-2026'],
         ['', '', ''],
-        ['5. Lampiran Bukti Nota', 'Masukkan tautan link online (misal Google Drive, Dropbox, e-proc) dokumen nota fisik.', 'https://drive.google.com/...']
+        ['5. Catatan / Lampiran', 'Masukkan catatan transaksi atau tautan link online dokumen pendukung.', 'Catatan tambahan atau https://drive.google.com/...']
       ];
 
       let currentGuideRow = 5;
@@ -902,7 +902,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
                     <th style={{ width: '110px' }}>Debit (Rp)</th>
                     <th style={{ width: '110px' }}>Kredit (Rp)</th>
                     <th style={{ width: '90px' }}>Tgl Penagihan</th>
-                    <th style={{ width: '130px' }}>Lampiran</th>
+                    <th style={{ width: '130px' }}>Catatan</th>
                     <th style={{ width: '45px' }}></th>
                   </tr>
                 </thead>
@@ -1055,7 +1055,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
                           <input 
                             type="text" 
                             className="excel-input" 
-                            placeholder="Link lampiran"
+                            placeholder="Catatan"
                             value={row.lampiran} 
                             data-import-row={idx}
                             data-import-col="lampiran"
