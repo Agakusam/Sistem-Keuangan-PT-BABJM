@@ -14,6 +14,20 @@ const formatRp = (num) => {
   return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
 
+// Robust Date parser helper
+const parseToDate = (dateStr) => {
+  if (!dateStr) return new Date(0);
+  if (dateStr instanceof Date) return dateStr;
+  const str = String(dateStr).trim();
+  if (str.match(/^\d{4}-\d{1,2}-\d{1,2}/)) return new Date(str);
+  let m = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
+  if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+  m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? new Date(0) : parsed;
+};
+
 export default function TransaksiPage() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +65,10 @@ export default function TransaksiPage() {
   };
 
   useEffect(() => {
-    const handleOutsideClick = () => {
+    const handleOutsideClick = (e) => {
+      if (e.target.closest('.excel-filter-trigger') || e.target.closest('.excel-filter-dropdown')) {
+        return;
+      }
       setActiveFilterCol(null);
     };
     document.addEventListener('click', handleOutsideClick);
@@ -68,10 +85,8 @@ export default function TransaksiPage() {
 
   const getDates = () => {
     const today = new Date();
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(today.getDate() - 7);
     return {
-      start: getLocalDateString(oneWeekAgo),
+      start: getLocalDateString(today),
       end: getLocalDateString(today)
     };
   };
@@ -110,7 +125,8 @@ export default function TransaksiPage() {
       
       const res = await fetchFromGas('listCash', { dari: start, sampai: end });
       if (res.success) {
-        setTransactions([...res.data.data].reverse()); // Show newest first
+        const sorted = [...res.data.data].sort((a, b) => parseToDate(a.tanggal) - parseToDate(b.tanggal));
+        setTransactions(sorted);
         setSummary({
           total_debit: res.data.total_debit || 0,
           total_kredit: res.data.total_kredit || 0,
@@ -173,7 +189,7 @@ export default function TransaksiPage() {
       worksheet.getRow(6).height = 26; // Headers
 
       // Sort data chronologically (oldest -> newest)
-      const sortedData = [...filteredData].sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+      const sortedData = [...filteredData].sort((a, b) => parseToDate(a.tanggal) - parseToDate(b.tanggal));
 
       // Format Rupiah helper for width calculation
       const formatRpForWidth = (num) => {
@@ -517,15 +533,15 @@ export default function TransaksiPage() {
           ? (row.keterangan_debit || row.keterangan || '-') 
           : (row.keterangan_kredit || row.keterangan || '-');
       case 'pic':
-        return row.pic || '-';
+        return row.pic && row.pic.trim() !== '' ? row.pic : '(Kosong)';
       case 'no_id':
-        return row.no_id || '-';
+        return row.no_id && String(row.no_id).trim() !== '' ? String(row.no_id) : '(Kosong)';
       case 'debit':
-        return row.debit !== 'Rp -' ? row.debit : '(Kosong)';
+        return (row.debit && row.debit !== 'Rp -' && String(row.debit).trim() !== '') ? String(row.debit) : '(Kosong)';
       case 'kredit':
-        return row.kredit !== 'Rp -' ? row.kredit : '(Kosong)';
+        return (row.kredit && row.kredit !== 'Rp -' && String(row.kredit).trim() !== '') ? String(row.kredit) : '(Kosong)';
       case 'saldo_akhir':
-        return row.saldo_akhir || '-';
+        return row.saldo_akhir && String(row.saldo_akhir).trim() !== '' ? String(row.saldo_akhir) : '(Kosong)';
       default:
         return '';
     }
@@ -571,8 +587,8 @@ export default function TransaksiPage() {
       }
       
       if (sortCol === 'tanggal') {
-        const dateA = a.tanggal ? new Date(a.tanggal) : new Date(0);
-        const dateB = b.tanggal ? new Date(b.tanggal) : new Date(0);
+        const dateA = a.tanggal ? parseToDate(a.tanggal) : new Date(0);
+        const dateB = b.tanggal ? parseToDate(b.tanggal) : new Date(0);
         return sortDir === 'asc' ? dateA - dateB : dateB - dateA;
       }
       
