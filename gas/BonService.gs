@@ -117,7 +117,7 @@ function listBons(params) {
     return {
       _row: b._row,
       id_bon: b.id_bon,
-      tanggal: b.tanggal,
+      tanggal: b.tanggal instanceof Date ? formatDateISO(b.tanggal) : b.tanggal,
       pic: b.pic,
       keterangan: b.keterangan,
       nominal: b.nominal,

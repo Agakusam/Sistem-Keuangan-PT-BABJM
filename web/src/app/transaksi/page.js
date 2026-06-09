@@ -630,7 +630,15 @@ export default function TransaksiPage() {
         </div>
         
         {isDropdownOpen && (
-          <div className="excel-filter-dropdown" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
+          <div 
+            className="excel-filter-dropdown" 
+            style={{ 
+              display: 'block',
+              left: ['tanggal', 'keterangan', 'pic', 'no_id'].includes(colName) ? 0 : 'auto',
+              right: ['tanggal', 'keterangan', 'pic', 'no_id'].includes(colName) ? 'auto' : 0
+            }} 
+            onClick={e => e.stopPropagation()}
+          >
             <div 
               className="excel-filter-option" 
               onClick={() => {

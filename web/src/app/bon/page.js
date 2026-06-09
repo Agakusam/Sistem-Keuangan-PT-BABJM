@@ -325,7 +325,15 @@ export default function BonPage() {
         </div>
         
         {isDropdownOpen && (
-          <div className="excel-filter-dropdown" style={{ display: 'block' }} onClick={e => e.stopPropagation()}>
+          <div 
+            className="excel-filter-dropdown" 
+            style={{ 
+              display: 'block',
+              left: ['tanggal', 'id_bon', 'pic', 'keterangan'].includes(colName) ? 0 : 'auto',
+              right: ['tanggal', 'id_bon', 'pic', 'keterangan'].includes(colName) ? 'auto' : 0
+            }} 
+            onClick={e => e.stopPropagation()}
+          >
             <div 
               className="excel-filter-option" 
               onClick={() => {

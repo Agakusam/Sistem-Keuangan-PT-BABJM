@@ -99,7 +99,13 @@ function listCashTransactions(params) {
   var cleaned = rows.map(function (r) {
     var copy = {};
     for (var k in r) {
-      if (k.charAt(0) !== '_') copy[k] = r[k];
+      if (k.charAt(0) !== '_') {
+        if (r[k] instanceof Date) {
+          copy[k] = formatDateISO(r[k]);
+        } else {
+          copy[k] = r[k];
+        }
+      }
     }
     copy._row = r._row; // Expose row index for editing!
     // Parse amounts for JSON
