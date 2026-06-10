@@ -9,8 +9,8 @@
 var SPREADSHEET_ID = '18_zWVbJZOX90vkPl9NHikXimgOUSZDSE5EOGiVqbYpk';
 
 var SHEETS = {
-  CASH_LOG: 'Cash_log',
-  BON_LOG: 'Bon_log',
+  CASH_LOG: 'Buku Kas',
+  BON_LOG: 'Buku Bon',
   DASHBOARD: 'Dashboard'
 };
 
@@ -331,6 +331,17 @@ function getDashboardSheet() { return getSheet(SHEETS.DASHBOARD); }
  */
 function setupGSheetDashboard() {
   var ss = getSpreadsheet();
+  
+  // Rename sheets from old names if they exist
+  var oldCash = ss.getSheetByName('Cash_log');
+  if (oldCash) {
+    oldCash.setName('Buku Kas');
+  }
+  var oldBon = ss.getSheetByName('Bon_log');
+  if (oldBon) {
+    oldBon.setName('Buku Bon');
+  }
+
   var d = getDashboardSheet();
   
   // Hard Reset
@@ -379,10 +390,10 @@ function setupGSheetDashboard() {
   d.getRange('I5').setValue('SALDO AKHIR').setBackground('#0f172a').setFontColor('#FFFFFF').setFontWeight('bold').setHorizontalAlignment('center');
   
   // Summary Metrics Values Formulations (using Indonesian semicolon divider as required by sheet locale)
-  d.getRange('E6').setFormula('=SUMIFS(Cash_log!H7:H; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
-  d.getRange('F6').setFormula('=SUMIFS(Cash_log!I7:I; Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
-  d.getRange('G6').setFormula('=COUNTIFS(Cash_log!A7:A; ">="&C5; Cash_log!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('#,##0');
-  d.getRange('H6').setFormula('=XLOOKUP(C5-1; FILTER(Cash_log!A$6:A; ISNUMBER(Cash_log!A$6:A) * (Cash_log!J$6:J<>"")); FILTER(Cash_log!J$6:J; ISNUMBER(Cash_log!A$6:A) * (Cash_log!J$6:J<>"")); Cash_log!J$6; -1; -1)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('E6').setFormula('=SUMIFS(\'Buku Kas\'!H7:H; \'Buku Kas\'!A7:A; ">="&C5; \'Buku Kas\'!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('F6').setFormula('=SUMIFS(\'Buku Kas\'!I7:I; \'Buku Kas\'!A7:A; ">="&C5; \'Buku Kas\'!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
+  d.getRange('G6').setFormula('=COUNTIFS(\'Buku Kas\'!A7:A; ">="&C5; \'Buku Kas\'!A7:A; "<="&C6)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('#,##0');
+  d.getRange('H6').setFormula('=XLOOKUP(C5-1; FILTER(\'Buku Kas\'!A$6:A; ISNUMBER(\'Buku Kas\'!A$6:A) * (\'Buku Kas\'!J$6:J<>"")); FILTER(\'Buku Kas\'!J$6:J; ISNUMBER(\'Buku Kas\'!A$6:A) * (\'Buku Kas\'!J$6:J<>"")); \'Buku Kas\'!J$6; -1; -1)').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
   d.getRange('I6').setFormula('=H6+E6-F6').setFontWeight('bold').setFontSize(12).setHorizontalAlignment('center').setNumberFormat('[$Rp-421] #,##0');
 
   // Borders for Summary Cards and Input
@@ -401,7 +412,7 @@ function setupGSheetDashboard() {
   d.setRowHeight(9, 25);
 
   // Table Data Filter Formula
-  d.getRange('B10').setFormula('=IFERROR(FILTER(Cash_log!A7:L; Cash_log!A7:A>=C5; Cash_log!A7:A<=C6); "Tidak ada transaksi dalam rentang ini")');
+  d.getRange('B10').setFormula('=IFERROR(FILTER(\'Buku Kas\'!A7:L; \'Buku Kas\'!A7:A>=C5; \'Buku Kas\'!A7:A<=C6); "Tidak ada transaksi dalam rentang ini")');
   
   // Format table data columns
   d.getRange('B10:B1000').setHorizontalAlignment('center');

@@ -94,7 +94,7 @@ export default function BonPage() {
   }, []);
 
   const handleDeleteSelected = async () => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedBons.size} bon terpilih? Tindakan ini akan menghapus bon dari Bon_log, menghapus transaksi Kas terkait di Cash_log, dan menghitung ulang saldo kas.`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus ${selectedBons.size} bon terpilih? Tindakan ini akan menghapus bon dari Buku Bon, menghapus transaksi Kas terkait di Buku Kas, dan menghitung ulang saldo kas.`)) return;
     
     setLoading(true);
     try {
@@ -462,7 +462,7 @@ export default function BonPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }} className="no-print">
         <div>
-          <h2>Monitoring Bon Kas</h2>
+          <h2>Buku Bon Kas</h2>
           <p>Catat dan pantau status pertanggungan bon kas</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>

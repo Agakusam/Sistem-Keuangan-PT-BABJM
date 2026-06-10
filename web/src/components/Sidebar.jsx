@@ -46,8 +46,8 @@ export default function Sidebar() {
 
   const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Kas_log', href: '/transaksi', icon: Wallet },
-    { name: 'Bon_log', href: '/bon', icon: Receipt },
+    { name: 'Buku Kas', href: '/transaksi', icon: Wallet },
+    { name: 'Buku Bon', href: '/bon', icon: Receipt },
     { name: 'Laporan', href: '/laporan', icon: BarChart3 },
     { name: 'Pengaturan', href: '/pengaturan', icon: Settings },
   ];

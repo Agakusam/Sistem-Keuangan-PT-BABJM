@@ -176,7 +176,7 @@ export default function TransaksiPage() {
     try {
       const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Cash_log', {
+      const worksheet = workbook.addWorksheet('Buku Kas', {
         views: [{ showGridLines: true }]
       });
 
@@ -767,7 +767,7 @@ export default function TransaksiPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }} className="no-print">
         <div>
-          <h2>Data Transaksi Kas (Kas_log)</h2>
+          <h2>Buku Kas Kecil</h2>
           <p>Kelola pencatatan kas masuk dan keluar secara dinamis</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
@@ -785,7 +785,7 @@ export default function TransaksiPage() {
           </button>
         </div>
       </div>
-
+ 
       {showForm && (
         <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
           <TransaksiForm onSuccess={() => {
@@ -794,7 +794,7 @@ export default function TransaksiPage() {
           }} />
         </div>
       )}
-
+ 
       {/* Summary Metrics Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
         {/* Saldo Awal */}
@@ -805,25 +805,25 @@ export default function TransaksiPage() {
           </div>
           <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)' }}>{formatRp(summary.saldo_awal)}</h3>
         </div>
-
+ 
         {/* Total Debit */}
         <div className="glass-card" style={{ padding: '1.25rem', borderLeft: '4px solid var(--success)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <span>Total Uang Masuk</span>
+            <span>Penerimaan Kas</span>
             <ArrowUpRight size={16} style={{ color: 'var(--success)' }} />
           </div>
           <h3 style={{ fontSize: '1.25rem', color: 'var(--success)' }}>{formatRp(summary.total_debit)}</h3>
         </div>
-
+ 
         {/* Total Kredit */}
         <div className="glass-card" style={{ padding: '1.25rem', borderLeft: '4px solid var(--danger)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <span>Total Uang Keluar</span>
+            <span>Pengeluaran Kas</span>
             <ArrowDownRight size={16} style={{ color: 'var(--danger)' }} />
           </div>
           <h3 style={{ fontSize: '1.25rem', color: 'var(--danger)' }}>{formatRp(summary.total_kredit)}</h3>
         </div>
-
+ 
         {/* Saldo Akhir */}
         <div className="glass-card" style={{ padding: '1.25rem', borderLeft: '4px solid var(--text-primary)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
@@ -832,11 +832,11 @@ export default function TransaksiPage() {
           </div>
           <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 700 }}>{formatRp(summary.saldo_akhir)}</h3>
         </div>
-
+ 
         {/* Jumlah Baris */}
         <div className="glass-card" style={{ padding: '1.25rem', borderLeft: '4px solid var(--text-tertiary)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: 500 }}>
-            <span>Jumlah Baris</span>
+            <span>Jumlah Transaksi</span>
             <FileText size={16} />
           </div>
           <h3 style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>{summary.total} data</h3>

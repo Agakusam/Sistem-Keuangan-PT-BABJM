@@ -150,40 +150,40 @@ export default function Dashboard() {
         {/* Card Saldo */}
         <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Saldo Tersedia</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Saldo Kas Saat Ini</span>
             <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
               <Wallet size={20} />
             </div>
           </div>
           <h2 style={{ fontSize: '2rem', color: 'var(--text-primary)' }}>{formatRp(data.saldo)}</h2>
         </div>
-
+ 
         {/* Card Kas Masuk */}
         <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Kas Masuk (Bulan Ini)</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Penerimaan Kas (Bulan Ini)</span>
             <div style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
               <TrendingUp size={20} />
             </div>
           </div>
           <h2 style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{formatRp(data.bulan_ini?.total_debit)}</h2>
         </div>
-
+ 
         {/* Card Kas Keluar */}
         <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Kas Keluar (Bulan Ini)</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Pengeluaran Kas (Bulan Ini)</span>
             <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
               <TrendingDown size={20} />
             </div>
           </div>
           <h2 style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{formatRp(data.bulan_ini?.total_kredit)}</h2>
         </div>
-
+ 
         {/* Card Bon Pending */}
         <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Bon Belum Pertanggungan</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: 500 }}>Bon Kas (Outstanding)</span>
             <div style={{ background: 'var(--warning-bg)', color: 'var(--warning)', padding: '0.5rem', borderRadius: 'var(--radius-md)' }}>
               <Clock size={20} />
             </div>

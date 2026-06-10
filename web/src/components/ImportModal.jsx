@@ -364,7 +364,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
     try {
       const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Cash_log', {
+      const worksheet = workbook.addWorksheet('Buku Kas', {
         views: [{ showGridLines: true }]
       });
 
@@ -783,7 +783,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }) {
         boxShadow: 'var(--shadow-2xl)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.75rem' }}>
-          <h3 style={{ margin: 0 }}>Import Laporan Kas (Cash_log)</h3>
+          <h3 style={{ margin: 0 }}>Import Laporan Buku Kas</h3>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
             <X size={20} />
           </button>

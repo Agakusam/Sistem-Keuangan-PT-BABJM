@@ -134,7 +134,7 @@ doc.rect(0, 150, 595.28, 15).fill(COLOR_PRIMARY);
 doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(26).text('MANUAL BOOK', 50, 240);
 doc.fontSize(18).text('PANDUAN OPERASIONAL PETTY CASH & KASBON', 50, 280);
 
-doc.fillColor('#A0AEC0').font('Helvetica').fontSize(12).text('Panduan Lengkap Penggunaan Aplikasi Keuangan Petty Cash (Kas_log)\ndan Piutang Karyawan (Bon) PT BABJM Terintegrasi Website & Telegram Bot', 50, 315, {
+doc.fillColor('#A0AEC0').font('Helvetica').fontSize(12).text('Panduan Lengkap Penggunaan Aplikasi Keuangan Petty Cash (Buku Kas)\ndan Piutang Karyawan (Bon) PT BABJM Terintegrasi Website & Telegram Bot', 50, 315, {
   lineGap: 4
 });
 
@@ -206,7 +206,7 @@ addParagraph('Aplikasi web Next.js adalah pusat kendali utama bagi staf keuangan
 
 addHeading2('Fitur Menu Utama Aplikasi Web:');
 addBullet('Dashboard (Halaman Utama):', ' Menampilkan saldo kas kecil aktif saat ini secara real-time. Dilengkapi dengan grafik grafik bulanan pengeluaran vs pemasukan (Debit vs Kredit) serta ringkasan jumlah kasbon luar (outstanding) berdasarkan statusnya.');
-addBullet('Transaksi (Kas_log):', ' Lembar buku besar kas kecil. Di halaman ini admin dapat melakukan filter berdasarkan rentang tanggal, mencari deskripsi transaksi, melakukan impor dari Excel, ekspor laporan Excel, dan mencetak laporan kas.');
+addBullet('Buku Kas:', ' Lembar buku besar kas kecil. Di halaman ini admin dapat melakukan filter berdasarkan rentang tanggal, mencari deskripsi transaksi, melakukan impor dari Excel, ekspor laporan Excel, dan mencetak laporan kas.');
 addBullet('Bon (Kasbon):', ' Halaman khusus pelacakan pinjaman sementara karyawan. Admin dapat mencatat bon baru, memantau batas jatuh tempo, dan memproses pelunasan bon saat nota belanja diserahkan.');
 addBullet('Pengaturan:', ' Tempat mengonfigurasi API, token Telegram Bot, Chat ID grup notifikasi, PIN keamanan website, dan nama penandatangan laporan ekspor.');
 

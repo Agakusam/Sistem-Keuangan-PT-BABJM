@@ -17,9 +17,20 @@ import { Calendar } from 'lucide-react';
 
 ChartJS.register(ArcElement, ChartTooltip, ChartLegend, CategoryScale, LinearScale, BarElement, Title);
 
+// Format Rupiah helper
 const formatRp = (num) => {
   if (num === null || num === undefined) return 'Rp 0';
   return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const cleanStr = String(dateStr).includes('T') ? dateStr.split('T')[0] : dateStr;
+  const parts = cleanStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return cleanStr;
 };
 
 export default function LaporanPage() {
@@ -27,45 +38,72 @@ export default function LaporanPage() {
   const [rekapBon, setRekapBon] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        if (!process.env.NEXT_PUBLIC_GAS_URL) {
-          // Dummy data
-          setRekapKas({
-            periode: 'Bulan Ini', total_transaksi: 45,
-            total_debit: 25000000, total_kredit: 18500000,
-            netto: 6500000, saldo_saat_ini: 6500000
-          });
-          setRekapBon({
-            total_bon: 15, jumlah_belum: 3, jumlah_lunas: 12,
-            nominal_belum: 1200000, nominal_lunas: 5800000
-          });
-          setLoading(false);
-          return;
-        }
+  // Date range states (defaults to first day of month to today)
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-        const [kasRes, bonRes] = await Promise.all([
-          fetchFromGas('rekapCash'),
-          fetchFromGas('rekapBon')
-        ]);
+  const getDefaultDates = () => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    return {
+      start: getLocalDateString(firstDay),
+      end: getLocalDateString(today)
+    };
+  };
 
-        if (kasRes.success) setRekapKas(kasRes.data);
-        if (bonRes.success) setRekapBon(bonRes.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
+  const defaultDates = getDefaultDates();
+  const [startDate, setStartDate] = useState(defaultDates.start);
+  const [endDate, setEndDate] = useState(defaultDates.end);
+
+  const loadData = async (start = startDate, end = endDate) => {
+    setLoading(true);
+    try {
+      if (!process.env.NEXT_PUBLIC_GAS_URL) {
+        // Dummy data fallback
+        setRekapKas({
+          periode: `${formatDate(start)} s.d. ${formatDate(end)}`, total_transaksi: 45,
+          total_debit: 25000000, total_kredit: 18500000,
+          netto: 6500000, saldo_saat_ini: 6500000
+        });
+        setRekapBon({
+          total_bon: 15, jumlah_belum: 3, jumlah_lunas: 12,
+          nominal_belum: 1200000, nominal_lunas: 5800000
+        });
         setLoading(false);
+        return;
       }
+
+      const [kasRes, bonRes] = await Promise.all([
+        fetchFromGas('rekapCash', { dari: start, sampai: end }),
+        fetchFromGas('rekapBon')
+      ]);
+
+      if (kasRes.success) setRekapKas(kasRes.data);
+      if (bonRes.success) setRekapBon(bonRes.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadData();
   }, []);
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Memuat laporan...</div>;
+  const handleFilterSubmit = (e) => {
+    e.preventDefault();
+    loadData(startDate, endDate);
+  };
+
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Memuat laporan...</div>;
 
   const doughnutData = {
-    labels: ['Kas Masuk', 'Kas Keluar'],
+    labels: ['Penerimaan Kas', 'Pengeluaran Kas'],
     datasets: [{
       data: [rekapKas?.total_debit || 0, rekapKas?.total_kredit || 0],
       backgroundColor: ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)'],
@@ -90,29 +128,59 @@ export default function LaporanPage() {
           <h2>Laporan & Analitik</h2>
           <p>Ringkasan transaksi kas dan perputaran bon</p>
         </div>
-        <button className="btn btn-secondary">
-          <Calendar size={18} /> Filter Periode
-        </button>
+      </div>
+
+      {/* Date Filter Controls */}
+      <div className="glass-card" style={{ padding: '1.25rem', marginBottom: '2rem' }}>
+        <form onSubmit={handleFilterSubmit} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+          <div style={{ flex: '1 1 200px' }}>
+            <label className="input-label" style={{ marginBottom: '0.25rem', display: 'block', fontSize: '0.85rem' }}>Tanggal Awal</label>
+            <input 
+              type="date" 
+              className="input-field" 
+              style={{ marginBottom: 0 }}
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+            />
+          </div>
+          <div style={{ flex: '1 1 200px' }}>
+            <label className="input-label" style={{ marginBottom: '0.25rem', display: 'block', fontSize: '0.85rem' }}>Tanggal Akhir</label>
+            <input 
+              type="date" 
+              className="input-field" 
+              style={{ marginBottom: 0 }}
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+            />
+          </div>
+          <button type="submit" className="btn btn-secondary" style={{ padding: '0.6rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Calendar size={18} /> Terapkan Filter
+          </button>
+        </form>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
         <div className="glass-card" style={{ padding: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>Rekap Kas ({rekapKas?.periode})</h3>
+          <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+            Rekap Kas ({formatDate(startDate)} s.d. {formatDate(endDate)})
+          </h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Total Masuk</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Penerimaan Kas</p>
               <p style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--success)' }}>{formatRp(rekapKas?.total_debit)}</p>
             </div>
             <div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Total Keluar</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Pengeluaran Kas</p>
               <p style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--danger)' }}>{formatRp(rekapKas?.total_kredit)}</p>
             </div>
             <div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Netto</p>
-              <p style={{ fontSize: '1.25rem', fontWeight: 600 }}>{formatRp(rekapKas?.netto)}</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Net Cash Flow</p>
+              <p style={{ fontSize: '1.25rem', fontWeight: 600, color: (rekapKas?.netto >= 0 ? 'var(--success)' : 'var(--danger)') }}>
+                {formatRp(rekapKas?.netto)}
+              </p>
             </div>
             <div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Total Transaksi</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)' }}>Jumlah Transaksi</p>
               <p style={{ fontSize: '1.25rem', fontWeight: 600 }}>{rekapKas?.total_transaksi}</p>
             </div>
           </div>

@@ -310,8 +310,8 @@ function onSpreadsheetEdit(e) {
     var sheet = range.getSheet();
     var sheetName = sheet.getName();
     
-    // Hanya proses jika terjadi di sheet Bon_log
-    if (sheetName !== 'Bon_log') return;
+    // Hanya proses jika terjadi di sheet Buku Bon
+    if (sheetName !== 'Buku Bon') return;
     
     var startRow = range.getRow();
     var numRows = range.getNumRows();
@@ -411,7 +411,7 @@ function _syncBonRowToCash(row) {
 function testOnEdit() {
   var sheet = getBonSheet();
   var lastRow = sheet.getLastRow();
-  Logger.log('Last row of Bon_log: ' + lastRow);
+  Logger.log('Last row of Buku Bon: ' + lastRow);
   if (lastRow >= 2) {
     _syncBonRowToCash(lastRow);
   }
