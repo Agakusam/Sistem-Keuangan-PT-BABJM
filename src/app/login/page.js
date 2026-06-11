@@ -2,15 +2,17 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TelegramLoginWidget from '@/components/TelegramLoginWidget';
+import { KeyRound, Send, ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
-  // You will need to replace this with your actual bot username without the @ symbol
-  // e.g. if bot is @PettyCashBabjmBot, use 'PettyCashBabjmBot'
-  const botName = process.env.NEXT_PUBLIC_BOT_USERNAME || 'YOUR_BOT_USERNAME_HERE'; 
+  const botName = process.env.NEXT_PUBLIC_BOT_USERNAME || 'babjmcakebot'; 
 
   const handleTelegramAuth = async (user) => {
     setLoading(true);
@@ -26,7 +28,6 @@ export default function LoginPage() {
       const data = await response.json();
       
       if (response.ok && data.success) {
-        // Success, redirect to dashboard
         router.push('/');
         router.refresh();
       } else {
@@ -40,28 +41,131 @@ export default function LoginPage() {
     }
   };
 
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        router.push('/');
+        router.refresh();
+      } else {
+        setError(data.error || 'Username atau password admin salah');
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Terjadi kesalahan jaringan');
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg-main)' }}>
       <div className="glass-card" style={{ padding: '2.5rem', maxWidth: '400px', width: '100%', textAlign: 'center' }}>
-        <h1 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Sistem Keuangan</h1>
-        <h2 style={{ marginBottom: '2rem', fontSize: '1.25rem', color: 'var(--text-secondary)' }}>PT BABJM</h2>
+        <h1 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)', fontSize: '2rem' }}>Sistem Keuangan</h1>
+        <h2 style={{ marginBottom: '2rem', fontSize: '1.25rem', color: 'var(--primary)', fontWeight: '600' }}>PT BABJM</h2>
         
-        <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Silakan login menggunakan akun Telegram Anda yang sudah terdaftar di sistem.
-        </p>
-
         {error && (
-          <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+          <div style={{ background: 'var(--danger-bg)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.875rem', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
             {error}
           </div>
         )}
 
         {loading ? (
-          <div style={{ padding: '1rem', color: 'var(--primary)' }}>Memproses login...</div>
+          <div style={{ padding: '2rem 1rem', color: 'var(--primary)' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 1rem auto', width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            Memproses masuk...
+          </div>
         ) : (
-          <TelegramLoginWidget botName={botName} onAuth={handleTelegramAuth} />
+          <>
+            {!showAdmin ? (
+              <div>
+                <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: '1.5' }}>
+                  Silakan login menggunakan akun Telegram Anda yang sudah terdaftar di sistem.
+                </p>
+                
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2.5rem' }}>
+                  <TelegramLoginWidget botName={botName} onAuth={handleTelegramAuth} />
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+                  <button 
+                    onClick={() => { setShowAdmin(true); setError(''); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', transition: 'color 0.2s' }}
+                    onMouseEnter={(e) => e.target.style.color = 'var(--primary)'}
+                    onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                  >
+                    <KeyRound size={16} /> Login Admin (Password)
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                  Masukkan kredensial administrator Anda.
+                </p>
+
+                <form onSubmit={handleAdminLogin} style={{ textAlign: 'left' }}>
+                  <div className="input-group">
+                    <label className="input-label" htmlFor="username">Username</label>
+                    <input 
+                      type="text" 
+                      id="username" 
+                      className="input-field" 
+                      value={username} 
+                      onChange={(e) => setUsername(e.target.value)} 
+                      required 
+                      placeholder="admin"
+                    />
+                  </div>
+
+                  <div className="input-group" style={{ marginBottom: '1.5rem' }}>
+                    <label className="input-label" htmlFor="password">Password</label>
+                    <input 
+                      type="password" 
+                      id="password" 
+                      className="input-field" 
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      required 
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                    Masuk <Send size={16} />
+                  </button>
+                </form>
+
+                <button 
+                  onClick={() => { setShowAdmin(false); setError(''); }}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '0.875rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => e.target.style.color = 'var(--text-secondary)'}
+                  onMouseLeave={(e) => e.target.style.color = 'var(--text-tertiary)'}
+                >
+                  <ArrowLeft size={16} /> Kembali ke Telegram Login
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
+      
+      <style jsx global>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }

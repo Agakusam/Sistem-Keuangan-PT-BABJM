@@ -16,6 +16,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [saldo, setSaldo] = useState('Rp 0');
+  const [user, setUser] = useState({ name: 'User', role: 'STAFF' });
 
   useEffect(() => {
     setMounted(true);
@@ -36,8 +37,22 @@ export default function Sidebar() {
         console.error('Failed to load sidebar saldo:', err);
       }
     }
+    
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setUser(data.user);
+        }
+      } catch (err) {
+        console.error('Failed to load user profile in sidebar:', err);
+      }
+    }
+
     if (mounted) {
       loadSaldo();
+      loadUser();
       // Poll every 30 seconds to keep it fresh
       const interval = setInterval(loadSaldo, 30000);
       return () => clearInterval(interval);
@@ -53,6 +68,10 @@ export default function Sidebar() {
   ];
 
   if (!mounted) return null;
+
+  const getInitials = (name) => {
+    return name ? name.substring(0, 2).toUpperCase() : 'US';
+  };
 
   return (
     <aside className="sidebar">
@@ -109,11 +128,15 @@ export default function Sidebar() {
         {/* User profile & Online Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.8rem' }}>
-            AD
+            {getInitials(user.name)}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', flex: 1, minWidth: 0 }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Administrator</span>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Petty Cash</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={user.name}>
+              {user.name}
+            </span>
+            <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>
+              {user.role}
+            </span>
           </div>
           <span className="badge badge-success" style={{ padding: '2px 6px', fontSize: '0.65rem' }}>Online</span>
         </div>
