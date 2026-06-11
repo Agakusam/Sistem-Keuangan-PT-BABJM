@@ -6,7 +6,7 @@ const SECRET_KEY = new TextEncoder().encode(
 );
 
 // Public paths that do not require authentication
-const publicPaths = ['/login', '/api/auth/telegram', '/api/telegram/webhook'];
+const publicPaths = ['/login', '/api/auth/telegram', '/api/telegram/webhook', '/api/auth/admin'];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
