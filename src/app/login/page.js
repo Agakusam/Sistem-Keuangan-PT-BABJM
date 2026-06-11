@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TelegramLoginWidget from '@/components/TelegramLoginWidget';
-import { KeyRound, Send, ArrowLeft } from 'lucide-react';
+import { KeyRound, Send, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const botName = process.env.NEXT_PUBLIC_BOT_USERNAME || 'babjmcakebot'; 
 
@@ -131,15 +132,39 @@ export default function LoginPage() {
 
                   <div className="input-group" style={{ marginBottom: '1.5rem' }}>
                     <label className="input-label" htmlFor="password">Password</label>
-                    <input 
-                      type="password" 
-                      id="password" 
-                      className="input-field" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      required 
-                      placeholder="••••••••"
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        id="password" 
+                        className="input-field" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        required 
+                        placeholder="••••••••"
+                        style={{ paddingRight: '2.5rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '0.25rem',
+                          zIndex: 10
+                        }}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
                   </div>
 
                   <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
