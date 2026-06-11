@@ -1,42 +1,45 @@
-# Clasp and Google Apps Script credentials
-.clasprc.json
-.anchor
-.clasp.json.bak
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Next.js and web app builds
-/web/.next/
-/web/out/
-/web/node_modules/
-/web/.env*.local
-/web/.env
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-# Clasp and Google Apps Script credentials
-.clasprc.json
-.anchor
-.clasp.json.bak
+# testing
+/coverage
 
-# Next.js and web app builds
-/web/.next/
-/web/out/
-/web/node_modules/
-/web/.env*.local
-/web/.env
+# next.js
+/.next/
+/out/
 
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# production
+/build
 
-# OS Files
+# misc
 .DS_Store
-Thumbs.db
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
 
 .vercel
-desktop.ini
+
+/src/generated/prisma
