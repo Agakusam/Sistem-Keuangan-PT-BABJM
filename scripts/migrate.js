@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const fetch = require('node-fetch'); // Assuming node 18+, fetch is global, but just in case
+// Node 18+ has fetch globally
 require('dotenv').config();
 
 const prisma = new PrismaClient();
@@ -32,12 +32,15 @@ async function migrate() {
     
     const cashRes = await fetch(url.toString());
     const cashData = await cashRes.json();
+    console.log('GAS Response:', cashData);
     
-    if (cashData.success && cashData.data) {
-      console.log(`Found ${cashData.data.length} cash transactions. Inserting...`);
-      for (const tx of cashData.data) {
-        const amount = parseFloat(tx.debit) > 0 ? parseFloat(tx.debit) : parseFloat(tx.kredit);
-        const jenis = parseFloat(tx.debit) > 0 ? 'DEBIT' : 'KREDIT';
+    if (cashData.success && cashData.data && cashData.data.data) {
+      console.log(`Found ${cashData.data.data.length} cash transactions. Inserting...`);
+      for (const tx of cashData.data.data) {
+        const debitVal = tx.debit ? parseFloat(String(tx.debit).replace(/[^0-9.-]/g, '')) : 0;
+        const kreditVal = tx.kredit ? parseFloat(String(tx.kredit).replace(/[^0-9.-]/g, '')) : 0;
+        const amount = (!isNaN(debitVal) && debitVal > 0) ? debitVal : ((!isNaN(kreditVal) && kreditVal > 0) ? kreditVal : 0);
+        const jenis = (!isNaN(debitVal) && debitVal > 0) ? 'DEBIT' : 'KREDIT';
         
         await prisma.cashTransaction.create({
           data: {
@@ -63,10 +66,11 @@ async function migrate() {
     
     const bonRes = await fetch(bonUrl.toString());
     const bonData = await bonRes.json();
+    console.log('GAS Bon Response:', bonData);
     
-    if (bonData.success && bonData.data) {
-      console.log(`Found ${bonData.data.length} bons. Inserting...`);
-      for (const b of bonData.data) {
+    if (bonData.success && bonData.data && bonData.data.data) {
+      console.log(`Found ${bonData.data.data.length} bons. Inserting...`);
+      for (const b of bonData.data.data) {
         await prisma.bon.create({
           data: {
             id_bon: b.id_bon,
